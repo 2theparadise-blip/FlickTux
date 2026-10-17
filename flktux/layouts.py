@@ -90,7 +90,8 @@ def get_layout(layout_name: str, mode: str = "kana"):
         "kana": "あ",
         "katakana": "ア",
         "alpha": "A",
-        "number": "1"
+        "number": "1",
+        "nav": "↑"
     }.get(mode, "あ")
 
     # -------------------------------------------------------------------------
@@ -98,6 +99,30 @@ def get_layout(layout_name: str, mode: str = "kana"):
     # 7, 8, 9 / 4, 5, 6 / 1, 2, 3 / 0
     # -------------------------------------------------------------------------
     if layout_name == "10キー":
+        if mode == "nav":
+            return [
+                [{"type": "action", "label": "Esc", "num": "/", "action": "esc", "style": "action-cell"},
+                 {"type": "action", "label": "Home", "num": "←", "action": "home", "style": "action-cell"},
+                 {"type": "action", "label": "End", "num": "→", "action": "end", "style": "action-cell"},
+                 {"type": "action", "label": "⌫", "num": "BS", "action": "backspace", "style": "action-cell"}],
+                [{"type": "action", "label": "Tab", "num": "7", "action": "tab", "style": "action-cell"},
+                 {"type": "action", "label": "▲ 上", "num": "8", "action": "up", "style": "action-cell"},
+                 {"type": "action", "label": "S-Tab", "num": "9", "action": "shift_tab", "style": "action-cell"},
+                 {"type": "action", "label": "PgUp", "num": "-", "action": "page_up", "style": "action-cell"}],
+                [{"type": "action", "label": "◀ 左", "num": "4", "action": "left", "style": "action-cell"},
+                 {"type": "action", "label": "決定", "num": "5", "action": "enter", "style": "action-cell"},
+                 {"type": "action", "label": "▶ 右", "num": "6", "action": "right", "style": "action-cell"},
+                 {"type": "action", "label": "PgDn", "num": "変", "action": "page_down", "style": "action-cell"}],
+                [{"type": "action", "label": "Shift", "num": "1", "action": "shift", "style": "action-cell"},
+                 {"type": "action", "label": "▼ 下", "num": "2", "action": "down", "style": "action-cell"},
+                 {"type": "action", "label": "Ctrl", "num": "3", "action": "ctrl", "style": "action-cell"},
+                 {"type": "action", "label": "次へ", "num": "+", "action": "next", "style": "action-cell"}],
+                [{"type": "action", "label": "Space", "num": "0", "action": "space", "style": "action-cell"},
+                 {"type": "action", "label": "Del", "num": ".", "action": "delete", "style": "action-cell"},
+                 {"type": "action", "label": mode_label, "num": "切替", "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "確定", "num": "Ent", "action": "enter", "style": "enter-cell"}],
+            ]
+
         if mode == "katakana":
             k7, k8, k9 = "ア", "カ", "サ"
             k4, k5, k6 = "タ", "ナ", "ハ"
@@ -149,6 +174,30 @@ def get_layout(layout_name: str, mode: str = "kana"):
     # -------------------------------------------------------------------------
     # 1. Google / 2. Galaxy / 3. iPhone / 4. ガラケー (4 rows x 5 columns)
     # -------------------------------------------------------------------------
+    if mode == "nav":
+        return [
+            [{"type": "action", "label": "Esc", "action": "esc", "style": "action-cell"},
+             {"type": "action", "label": "Home", "action": "home", "style": "action-cell"},
+             {"type": "action", "label": "▲ 上", "action": "up", "style": "action-cell"},
+             {"type": "action", "label": "End", "action": "end", "style": "action-cell"},
+             {"type": "action", "label": "⌫", "action": "backspace", "style": "action-cell"}],
+            [{"type": "action", "label": "Tab", "action": "tab", "style": "action-cell"},
+             {"type": "action", "label": "◀ 左", "action": "left", "style": "action-cell"},
+             {"type": "action", "label": "決定", "action": "enter", "style": "action-cell"},
+             {"type": "action", "label": "▶ 右", "action": "right", "style": "action-cell"},
+             {"type": "action", "label": "PgUp", "action": "page_up", "style": "action-cell"}],
+            [{"type": "action", "label": "Shift", "action": "shift", "style": "action-cell"},
+             {"type": "action", "label": "Ctrl", "action": "ctrl", "style": "action-cell"},
+             {"type": "action", "label": "▼ 下", "action": "down", "style": "action-cell"},
+             {"type": "action", "label": "S-Tab", "action": "shift_tab", "style": "action-cell"},
+             {"type": "action", "label": "PgDn", "action": "page_down", "style": "action-cell"}],
+            [{"type": "action", "label": "Space", "action": "space", "style": "action-cell"},
+             {"type": "action", "label": "Del", "action": "delete", "style": "action-cell"},
+             {"type": "action", "label": "変換", "action": "convert", "style": "action-cell"},
+             {"type": "action", "label": mode_label, "action": "mode", "style": "action-cell"},
+             {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell"}],
+        ]
+
     if mode == "katakana":
         c0, c1, c2 = "ア", "カ", "サ"
         c3, c4, c5 = "タ", "ナ", "ハ"

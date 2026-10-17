@@ -29,15 +29,53 @@ from .layouts import (
 )
 from .numpad_listener import NumpadListener
 
+try:
+    from Xlib import X, display as xdisplay
+    HAS_XLIB = True
+except Exception:
+    HAS_XLIB = False
+
+def confine_pointer_to_xid(xid: int) -> bool:
+    if not HAS_XLIB or not xid:
+        return False
+    try:
+        d = xdisplay.Display()
+        win = d.create_resource_object('window', xid)
+        mask = (X.ButtonPressMask | X.ButtonReleaseMask | X.PointerMotionMask |
+                X.EnterWindowMask | X.LeaveWindowMask)
+        status = win.grab_pointer(True, mask, X.GrabModeAsync, X.GrabModeAsync, win, X.NONE, X.CurrentTime)
+        d.sync()
+        return status == X.GrabSuccess
+    except Exception as e:
+        print(f"[flktux] XGrabPointer error: {e}", file=sys.stderr)
+        return False
+
+def ungrab_pointer():
+    if not HAS_XLIB:
+        return
+    try:
+        d = xdisplay.Display()
+        d.ungrab_pointer(X.CurrentTime)
+        d.sync()
+    except Exception:
+        pass
+
 CONFIG_DIR = os.path.expanduser("~/.config/flktux")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 DEFAULT_TOGGLE_TIMEOUT_MS = 500  # 0.5s auto-commit
 
 CSS_STYLE = b"""
 window {
+    background-color: transparent;
+}
+.edge-frame {
     background-color: #202124;
-    border: 2px solid #3c4043;
-    border-radius: 14px;
+    border: 3px solid #3c4043;
+    border-radius: 16px;
+    padding: 5px;
+}
+.edge-frame.confined {
+    border: 3px solid #8ab4f8;
 }
 .header-bar {
     background-color: #282a2d;
@@ -200,7 +238,7 @@ class FlickOverlay(Gtk.DrawingArea):
 
 
 class FlickTuxWindow(Gtk.Window):
-    """Floating Flick Keyboard Window for Linux"""
+    """Floating Multi-Mode Flick Keyboard Window for Linux"""
 
     def __init__(self):
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
@@ -215,8 +253,9 @@ class FlickTuxWindow(Gtk.Window):
         self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
         self.set_resizable(False)
         self.set_app_paintable(True)
+        self.set_support_multidevice(True)  # CRITICAL: Stylus pen & Multitouch support
 
-        # Set window icon
+        # Window icon
         for icon_path in [
             "/opt/flicktux/assets/icon.png",
             "/usr/share/pixmaps/flicktux.png",
@@ -230,7 +269,7 @@ class FlickTuxWindow(Gtk.Window):
                     pass
 
         self.current_layout_name = "Google"
-        self.input_mode = "kana"  # 'kana' | 'katakana' | 'alpha' | 'number'
+        self.input_mode = "kana"  # 'kana' | 'katakana' | 'alpha' | 'number' | 'nav'
         self.toggle_timeout_ms = DEFAULT_TOGGLE_TIMEOUT_MS
         self.saved_pos = None
         self.load_saved_config()
@@ -243,6 +282,11 @@ class FlickTuxWindow(Gtk.Window):
         self.tab_buttons = {}
         self.current_matrix = []
 
+        # Modifiers & Confinement State
+        self.is_shift_latched = False
+        self.is_ctrl_latched = False
+        self.is_confined = True
+
         # Toggle state
         self.toggle_key = None
         self.toggle_index = 0
@@ -251,9 +295,23 @@ class FlickTuxWindow(Gtk.Window):
         # Numpad listener
         self.numpad_listener = NumpadListener(self.on_numpad_event)
 
-        # UI Layout
+        # Outer Edge Frame for 1-finger / 2-finger drag movement
+        self.edge_frame = Gtk.EventBox()
+        self.edge_frame.get_style_context().add_class("edge-frame")
+        if self.is_confined:
+            self.edge_frame.get_style_context().add_class("confined")
+        self.edge_frame.add_events(
+            Gdk.EventMask.BUTTON_PRESS_MASK
+            | Gdk.EventMask.SCROLL_MASK
+            | Gdk.EventMask.SMOOTH_SCROLL_MASK
+        )
+        self.edge_frame.connect("button-press-event", self.on_edge_press)
+        self.edge_frame.connect("scroll-event", self.on_edge_scroll)
+        self.add(self.edge_frame)
+
+        # UI Layout Box inside edge frame
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.add(main_box)
+        self.edge_frame.add(main_box)
 
         # 1. Header Bar
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
@@ -268,6 +326,13 @@ class FlickTuxWindow(Gtk.Window):
 
         header.pack_start(Gtk.Label(label=""), True, True, 0)  # Spacer
 
+        # Confine toggle button
+        self.confine_btn = Gtk.Button(label="🔒" if self.is_confined else "🔓")
+        self.confine_btn.get_style_context().add_class("icon-btn")
+        self.confine_btn.set_tooltip_text("ポインタ拘束の切替 (ON: キーボード内に拘束 / OFF: 自由移動)")
+        self.confine_btn.connect("clicked", self.on_toggle_confine)
+        header.pack_end(self.confine_btn, False, False, 1)
+
         # Settings button
         settings_btn = Gtk.Button(label="⚙")
         settings_btn.get_style_context().add_class("icon-btn")
@@ -278,7 +343,7 @@ class FlickTuxWindow(Gtk.Window):
         # Close button
         close_btn = Gtk.Button(label="✕")
         close_btn.get_style_context().add_class("close-btn")
-        close_btn.connect("clicked", lambda w: Gtk.main_quit())
+        close_btn.connect("clicked", self.on_close_clicked)
         header.pack_end(close_btn, False, False, 1)
 
         main_box.pack_start(header, False, False, 0)
@@ -320,9 +385,79 @@ class FlickTuxWindow(Gtk.Window):
 
         self._pos_save_id = None
         self.connect("configure-event", self.on_configure)
+        self.connect("map-event", self.on_window_map)
+        self.connect("unmap-event", self.on_window_unmap)
+        self.connect("destroy", self.on_window_destroy)
 
         if self.current_layout_name == "10キー":
             self.numpad_listener.start()
+
+    def on_window_map(self, widget, event):
+        if self.is_confined:
+            GLib.timeout_add(100, self._apply_confine)
+        return False
+
+    def on_window_unmap(self, widget, event):
+        ungrab_pointer()
+        return False
+
+    def on_window_destroy(self, widget):
+        ungrab_pointer()
+
+    def _apply_confine(self):
+        if not self.is_confined or not self.get_visible():
+            return False
+        gdk_win = self.get_window()
+        if gdk_win:
+            try:
+                xid = gdk_win.get_xid()
+                confine_pointer_to_xid(xid)
+            except Exception:
+                pass
+        return False
+
+    def on_toggle_confine(self, btn):
+        self.is_confined = not self.is_confined
+        ctx = self.edge_frame.get_style_context()
+        if self.is_confined:
+            self.confine_btn.set_label("🔒")
+            ctx.add_class("confined")
+            self._apply_confine()
+        else:
+            self.confine_btn.set_label("🔓")
+            ctx.remove_class("confined")
+            ungrab_pointer()
+
+    def on_close_clicked(self, widget):
+        ungrab_pointer()
+        Gtk.main_quit()
+
+    def on_edge_press(self, widget, event):
+        if event.button == 1:
+            self.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
+            return True
+        return False
+
+    def on_edge_scroll(self, widget, event):
+        has_delta, dx, dy = event.get_scroll_deltas()
+        if not has_delta:
+            direction = event.direction
+            dx, dy = 0.0, 0.0
+            if direction == Gdk.ScrollDirection.UP:
+                dy = -1.0
+            elif direction == Gdk.ScrollDirection.DOWN:
+                dy = 1.0
+            elif direction == Gdk.ScrollDirection.LEFT:
+                dx = -1.0
+            elif direction == Gdk.ScrollDirection.RIGHT:
+                dx = 1.0
+
+        cur_x, cur_y = self.get_position()
+        move_speed = 22.0
+        new_x = int(cur_x + dx * move_speed)
+        new_y = int(cur_y + dy * move_speed)
+        self.move(new_x, new_y)
+        return True
 
     def on_configure(self, widget, event):
         if self._pos_save_id is not None:
@@ -388,8 +523,10 @@ class FlickTuxWindow(Gtk.Window):
             self.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
 
     def on_open_settings(self, widget):
+        ungrab_pointer()  # Temporarily ungrab pointer for settings dialog
         from .settings_gui import SettingsDialog
         win = SettingsDialog()
+        win.connect("destroy", lambda w: self._apply_confine() if self.is_confined else None)
         win.show_all()
 
     def on_tab_clicked(self, btn, layout_name):
@@ -427,29 +564,57 @@ class FlickTuxWindow(Gtk.Window):
 
         # Adjust window size: 10-key is 5 rows x 4 cols (tall), others 4 rows x 5 cols
         if len(self.current_matrix) > len(self.current_matrix[0]) or len(self.current_matrix) == 5:
-            self.set_size_request(300, 360)
+            self.set_size_request(310, 370)
         else:
-            self.set_size_request(360, 270)
+            self.set_size_request(370, 280)
         self.resize(1, 1)
         self.grid.show_all()
 
-    def create_cell_widget(self, info):
-        btn = Gtk.Button()
-        btn.set_relief(Gtk.ReliefStyle.NONE)
-        btn.add_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK)
+    def snap_pointer_to_cell_center(self, widget, event):
+        """セルの中央座標を計算し、ポインタを磁気スナップ＆フリック起点を中央に固定"""
+        try:
+            alloc = widget.get_allocation()
+            win = widget.get_window()
+            if win:
+                origin_x, origin_y = win.get_root_coords(alloc.x, alloc.y)
+                center_x = origin_x + alloc.width // 2
+                center_y = origin_y + alloc.height // 2
 
-        btn.connect("button-press-event", self.on_cell_press, info)
-        btn.connect("motion-notify-event", self.on_cell_motion, info)
-        btn.connect("button-release-event", self.on_cell_release, info)
+                # Magnetic Pointer Warp
+                screen = widget.get_screen()
+                display = screen.get_display()
+                device = event.get_device() or display.get_device_manager().get_client_pointer()
+                if device:
+                    device.warp(screen, center_x, center_y)
+                return (center_x, center_y)
+        except Exception:
+            pass
+        return (int(event.x_root), int(event.y_root))
+
+    def create_cell_widget(self, info):
+        box = Gtk.EventBox()
+        box.set_visible_window(True)
+        box.add_events(
+            Gdk.EventMask.POINTER_MOTION_MASK
+            | Gdk.EventMask.BUTTON_PRESS_MASK
+            | Gdk.EventMask.BUTTON_RELEASE_MASK
+            | Gdk.EventMask.ENTER_NOTIFY_MASK
+            | Gdk.EventMask.LEAVE_NOTIFY_MASK
+            | Gdk.EventMask.TOUCH_MASK
+        )
+
+        box.connect("button-press-event", self.on_cell_press, info)
+        box.connect("motion-notify-event", self.on_cell_motion, info)
+        box.connect("button-release-event", self.on_cell_release, info)
 
         lbl = Gtk.Label()
         lbl.set_use_markup(True)
 
         if info["type"] == "flick":
-            btn.get_style_context().add_class("key-cell")
+            box.get_style_context().add_class("key-cell")
             key_name = info["key"]
             flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
-            center_char = flick_data.get('center', key_name)
+            center_char = flick_data.get('center', key_name) if flick_data else key_name
             if info.get("num"):
                 num = info["num"]
                 lbl.set_markup(f"<span size='8500' color='#8ab4f8'>{num}</span> <span size='14000' weight='bold' color='#ffffff'>{center_char}</span>")
@@ -457,20 +622,30 @@ class FlickTuxWindow(Gtk.Window):
                 lbl.set_markup(f"<span size='15000' weight='bold' color='#ffffff'>{center_char}</span>")
         else:
             style = info.get("style", "action-cell")
-            btn.get_style_context().add_class(style)
+            box.get_style_context().add_class(style)
             label = info.get("label", "")
-            color = "#202124" if "enter" in style else "#e8eaed"
+            action = info.get("action", "")
+
+            # Highlight latched modifiers
+            if action == "shift" and self.is_shift_latched:
+                box.get_style_context().add_class("latched-cell")
+            elif action == "ctrl" and self.is_ctrl_latched:
+                box.get_style_context().add_class("latched-cell")
+
+            color = "#202124" if ("enter" in style or (action == "shift" and self.is_shift_latched) or (action == "ctrl" and self.is_ctrl_latched)) else "#e8eaed"
             font_size = "11000" if len(label) > 2 else "13000"
             lbl.set_markup(f"<span size='{font_size}' weight='bold' color='{color}'>{label}</span>")
 
-        btn.add(lbl)
-        return btn
+        box.add(lbl)
+        return box
 
     def on_cell_press(self, widget, event, info):
         if event.button not in (1, 3):
-            return False
+            return True
 
-        self.drag_start = (event.x_root, event.y_root)
+        # Snap pointer to geometric center for magnetic crisp touch feel!
+        center_coords = self.snap_pointer_to_cell_center(widget, event)
+        self.drag_start = center_coords
         self.active_cell = info
         self.press_button = event.button
         self.current_dir = 'center'
@@ -486,17 +661,17 @@ class FlickTuxWindow(Gtk.Window):
             cy = alloc.y + alloc.height / 2
             self.flick_guide.show_guide(cx, cy, flick_data, 'center')
 
-        return False
+        return True
 
     def on_cell_motion(self, widget, event, info):
         if not self.drag_start or not self.active_cell:
-            return False
+            return True
 
         dx = event.x_root - self.drag_start[0]
         dy = event.y_root - self.drag_start[1]
         dist = math.hypot(dx, dy)
 
-        threshold = 16
+        threshold = 18  # 18px detent threshold for crisp snapping
         if dist > threshold:
             angle = math.degrees(math.atan2(dy, dx))
             if -45 <= angle <= 45:
@@ -520,14 +695,14 @@ class FlickTuxWindow(Gtk.Window):
                 cy = alloc.y + alloc.height / 2
                 self.flick_guide.show_guide(cx, cy, flick_data, direction)
 
-        return False
+        return True
 
     def on_cell_release(self, widget, event, info):
         widget.get_style_context().remove_class("key-pressed")
         self.flick_guide.hide_guide()
 
         if not self.drag_start:
-            return False
+            return True
 
         button = self.press_button
         flick_dir = self.current_dir
@@ -538,13 +713,13 @@ class FlickTuxWindow(Gtk.Window):
 
             if button == 3:
                 self.commit_toggle()
-                char = flick_data.get(flick_dir if flick_dir != 'center' else 'left', key_name)
+                char = flick_data.get(flick_dir if flick_dir != 'center' else 'left', key_name) if flick_data else key_name
                 if char:
                     self.type_char(char)
             else:
                 if flick_dir != 'center':
                     self.commit_toggle()
-                    char = flick_data.get(flick_dir, '')
+                    char = flick_data.get(flick_dir, '') if flick_data else ''
                     if char:
                         self.type_char(char)
                 else:
@@ -555,7 +730,7 @@ class FlickTuxWindow(Gtk.Window):
         self.drag_start = None
         self.active_cell = None
         self.current_dir = 'center'
-        return False
+        return True
 
     def on_numpad_event(self, r: int, c: int):
         if r < len(self.current_matrix) and c < len(self.current_matrix[r]):
@@ -612,7 +787,7 @@ class FlickTuxWindow(Gtk.Window):
                 return
 
         self.commit_toggle()
-        char = flick_data.get('center', key_name)
+        char = flick_data.get('center', key_name) if flick_data else key_name
         self.type_char(char)
 
     def handle_action(self, action):
@@ -632,14 +807,49 @@ class FlickTuxWindow(Gtk.Window):
             self.last_char = ""
             XDO.key("Return")
         elif action == "left":
-            XDO.key("Left")
+            prefix = "Shift+" if self.is_shift_latched else ""
+            XDO.key(f"{prefix}Left")
         elif action == "right":
-            XDO.key("Right")
+            prefix = "Shift+" if self.is_shift_latched else ""
+            XDO.key(f"{prefix}Right")
+        elif action == "up":
+            prefix = "Shift+" if self.is_shift_latched else ""
+            XDO.key(f"{prefix}Up")
+        elif action == "down":
+            prefix = "Shift+" if self.is_shift_latched else ""
+            XDO.key(f"{prefix}Down")
+        elif action == "tab":
+            if self.is_shift_latched:
+                XDO.key("ISO_Left_Tab")
+                self.is_shift_latched = False
+                self.rebuild_keys()
+            else:
+                XDO.key("Tab")
+        elif action == "shift_tab":
+            XDO.key("ISO_Left_Tab")
+        elif action == "shift":
+            self.is_shift_latched = not self.is_shift_latched
+            self.rebuild_keys()
+        elif action == "ctrl":
+            self.is_ctrl_latched = not self.is_ctrl_latched
+            self.rebuild_keys()
+        elif action == "home":
+            XDO.key("Home")
+        elif action == "end":
+            XDO.key("End")
+        elif action == "page_up":
+            XDO.key("Prior")
+        elif action == "page_down":
+            XDO.key("Next")
+        elif action == "esc":
+            XDO.key("Escape")
+        elif action == "delete":
+            XDO.key("Delete")
         elif action == "dakuten":
             self.apply_dakuten()
         elif action == "mode":
-            # Cycle modes: kana -> katakana -> alpha -> number -> kana
-            modes = ["kana", "katakana", "alpha", "number"]
+            # Cycle modes: kana -> katakana -> alpha -> number -> nav -> kana
+            modes = ["kana", "katakana", "alpha", "number", "nav"]
             curr_idx = modes.index(self.input_mode) if self.input_mode in modes else 0
             self.input_mode = modes[(curr_idx + 1) % len(modes)]
             self.save_layout(self.current_layout_name)
