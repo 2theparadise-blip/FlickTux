@@ -3,7 +3,7 @@
 """
 flktux.numpad_listener: Physical 10-key (NumPad) hardware integration
 Listens for PC numpad / external Bluetooth/USB numpad keys and maps to
-FlickTux 10-key toggle input (7:あ, 8:か, 9:さ, 4:た, 5:な, 6:は, 1:ま, 2:や, 3:ら, 0:わ).
+FlickTux 10-key toggle input based on current mode (Kana, Katakana, Alpha, Numbers).
 """
 
 import sys
@@ -11,26 +11,32 @@ import threading
 from typing import Callable, Optional
 from gi.repository import GLib
 
-# Physical KeyPad symbol names to FlickTux actions / keys
-NUMPAD_KEY_MAP = {
-    "KP_7": ("flick", "あ"),
-    "KP_8": ("flick", "か"),
-    "KP_9": ("flick", "さ"),
-    "KP_4": ("flick", "た"),
-    "KP_5": ("flick", "な"),
-    "KP_6": ("flick", "は"),
-    "KP_1": ("flick", "ま"),
-    "KP_2": ("flick", "や"),
-    "KP_3": ("flick", "ら"),
-    "KP_0": ("flick", "わ"),
-    "KP_Decimal": ("flick", "、。"),
-    "KP_Multiply": ("action", "dakuten"),   # * -> ゛゜小
-    "KP_Divide": ("action", "symbol"),      # / -> 記号
-    "KP_Subtract": ("action", "space"),     # - -> 空白
-    "KP_Add": ("action", "next"),           # + -> 次へ (トグル確定)
-    "KP_Enter": ("action", "enter"),        # Enter -> 確定
-    "KP_Delete": ("action", "backspace"),   # Delete -> ⌫
-    "BackSpace": ("action", "backspace"),
+# Physical KeyPad symbol names to 10-key grid positions (row, col)
+# Matches 7, 8, 9 / 4, 5, 6 / 1, 2, 3 / 0
+NUMPAD_GRID_MAP = {
+    "KP_Divide":   (0, 0),  # Row 0, Col 0: / (記号)
+    "KP_7":        (1, 0),  # Row 1, Col 0: 7 (あ / ア / abc / 7)
+    "KP_8":        (1, 1),  # Row 1, Col 1: 8 (か / カ / def / 8)
+    "KP_9":        (1, 2),  # Row 1, Col 2: 9 (さ / サ / ghi / 9)
+    "KP_Subtract": (1, 3),  # Row 1, Col 3: - (空白)
+
+    "KP_4":        (2, 0),  # Row 2, Col 0: 4 (た / タ / jkl / 4)
+    "KP_5":        (2, 1),  # Row 2, Col 1: 5 (な / ナ / mno / 5)
+    "KP_6":        (2, 2),  # Row 2, Col 2: 6 (は / ハ / pqrs / 6)
+    # Row 2, Col 3: 変換
+
+    "KP_1":        (3, 0),  # Row 3, Col 0: 1 (ま / マ / tuv / 1)
+    "KP_2":        (3, 1),  # Row 3, Col 1: 2 (や / ヤ / wxyz / 2)
+    "KP_3":        (3, 2),  # Row 3, Col 2: 3 (ら / ラ / @._/ / 3)
+    "KP_Add":      (3, 3),  # Row 3, Col 3: + (次へ)
+
+    "KP_0":        (4, 0),  # Row 4, Col 0: 0 (わ / ワ / ␣ / 0)
+    "KP_Decimal":  (4, 1),  # Row 4, Col 1: . (、。 / .,?! / .)
+    "KP_Multiply": (4, 2),  # Row 4, Col 2: * (切替 / ゛゜小 / a/A)
+    "KP_Enter":    (4, 3),  # Row 4, Col 3: Enter (確定)
+
+    "KP_Delete":   (0, 3),  # Backspace (消去)
+    "BackSpace":   (0, 3),
 }
 
 
@@ -38,7 +44,7 @@ class NumpadListener:
     """X11 バックグラウンドリスナー: 物理テンキーの入力を検知し、
     フォーカスに関わらず FlickTux のガラケー打ちトグルを実行"""
 
-    def __init__(self, callback: Callable[[str, str], None]):
+    def __init__(self, callback: Callable[[int, int], None]):
         self.callback = callback
         self.running = False
         self.thread: Optional[threading.Thread] = None
@@ -76,7 +82,7 @@ class NumpadListener:
             self.root = self.d.screen().root
 
             # Grab numpad keys
-            for key_name in NUMPAD_KEY_MAP.keys():
+            for key_name in NUMPAD_GRID_MAP.keys():
                 ks = self.XK.string_to_keysym(key_name)
                 if ks:
                     kc = self.d.keysym_to_keycode(ks)
@@ -98,8 +104,8 @@ class NumpadListener:
                 if event.type == self.X.KeyPress:
                     for name, kc in self.grabbed_keycodes.items():
                         if event.detail == kc:
-                            kind, target = NUMPAD_KEY_MAP[name]
-                            GLib.idle_add(self.callback, kind, target)
+                            r, c = NUMPAD_GRID_MAP[name]
+                            GLib.idle_add(self.callback, r, c)
                             break
         except Exception as e:
             if self.running:

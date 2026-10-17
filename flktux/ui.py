@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-flktux.ui: Floating Flick Keyboard UI
-Supports 5 major layouts, drag-to-move anywhere, position persistence,
-cross-flick guide, toggle typing, and physical 10-key integration.
+flktux.ui: Floating Multi-Mode Flick Keyboard UI
+Supports 5 major layouts, 4 input modes (かな, カナ, 英語/ABC, 数字/123),
+drag-to-move anywhere, position persistence, cross-flick guide, toggle typing,
+and physical 10-key hardware integration.
 """
 
 import os
@@ -18,10 +19,11 @@ from gi.repository import Gtk, Gdk, GLib, Pango, cairo
 
 from .xdo import XDO
 from .layouts import (
-    LAYOUTS,
-    LAYOUT_GOOGLE,
+    get_layout,
     KANA_FLICKS,
-    YA_ANDROID,
+    KATAKANA_FLICKS,
+    ALPHA_FLICKS,
+    NUMBER_FLICKS,
     TOGGLE_CYCLES,
     DAKUTEN_MAP,
 )
@@ -215,6 +217,7 @@ class FlickTuxWindow(Gtk.Window):
         self.set_app_paintable(True)
 
         self.current_layout_name = "Google"
+        self.input_mode = "kana"  # 'kana' | 'katakana' | 'alpha' | 'number'
         self.toggle_timeout_ms = DEFAULT_TOGGLE_TIMEOUT_MS
         self.saved_pos = None
         self.load_saved_config()
@@ -225,6 +228,7 @@ class FlickTuxWindow(Gtk.Window):
         self.press_button = 1
         self.current_dir = 'center'
         self.tab_buttons = {}
+        self.current_matrix = []
 
         # Toggle state
         self.toggle_key = None
@@ -340,8 +344,7 @@ class FlickTuxWindow(Gtk.Window):
                 with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.current_layout_name = data.get("layout", "Google")
-                    if self.current_layout_name not in LAYOUTS:
-                        self.current_layout_name = "Google"
+                    self.input_mode = data.get("mode", "kana")
                     self.toggle_timeout_ms = int(data.get("toggle_timeout_ms", DEFAULT_TOGGLE_TIMEOUT_MS))
                     if "window_x" in data and "window_y" in data:
                         self.saved_pos = (int(data["window_x"]), int(data["window_y"]))
@@ -349,12 +352,17 @@ class FlickTuxWindow(Gtk.Window):
         except Exception:
             pass
         self.current_layout_name = "Google"
+        self.input_mode = "kana"
         self.toggle_timeout_ms = DEFAULT_TOGGLE_TIMEOUT_MS
 
     def save_layout(self, layout_name):
         try:
             os.makedirs(CONFIG_DIR, exist_ok=True)
-            cfg = {"layout": layout_name, "toggle_timeout_ms": self.toggle_timeout_ms}
+            cfg = {
+                "layout": layout_name,
+                "mode": self.input_mode,
+                "toggle_timeout_ms": self.toggle_timeout_ms
+            }
             if self.saved_pos:
                 cfg["window_x"], cfg["window_y"] = self.saved_pos
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
@@ -397,15 +405,15 @@ class FlickTuxWindow(Gtk.Window):
         for child in self.grid.get_children():
             self.grid.remove(child)
 
-        layout_matrix = LAYOUTS.get(self.current_layout_name, LAYOUT_GOOGLE)
+        self.current_matrix = get_layout(self.current_layout_name, self.input_mode)
 
-        for r, row in enumerate(layout_matrix):
+        for r, row in enumerate(self.current_matrix):
             for c, cell_info in enumerate(row):
                 widget = self.create_cell_widget(cell_info)
                 self.grid.attach(widget, c, r, 1, 1)
 
         # Adjust window size: 10-key is 5 rows x 4 cols (tall), others 4 rows x 5 cols
-        if len(layout_matrix) > len(layout_matrix[0]) or len(layout_matrix) == 5:
+        if len(self.current_matrix) > len(self.current_matrix[0]) or len(self.current_matrix) == 5:
             self.set_size_request(300, 360)
         else:
             self.set_size_request(360, 270)
@@ -431,9 +439,9 @@ class FlickTuxWindow(Gtk.Window):
             center_char = flick_data.get('center', key_name)
             if info.get("num"):
                 num = info["num"]
-                lbl.set_markup(f"<span size='8500' color='#8ab4f8'>{num}</span> <span size='15000' weight='bold' color='#ffffff'>{center_char}</span>")
+                lbl.set_markup(f"<span size='8500' color='#8ab4f8'>{num}</span> <span size='14000' weight='bold' color='#ffffff'>{center_char}</span>")
             else:
-                lbl.set_markup(f"<span size='16000' weight='bold' color='#ffffff'>{center_char}</span>")
+                lbl.set_markup(f"<span size='15000' weight='bold' color='#ffffff'>{center_char}</span>")
         else:
             style = info.get("style", "action-cell")
             btn.get_style_context().add_class(style)
@@ -536,12 +544,15 @@ class FlickTuxWindow(Gtk.Window):
         self.current_dir = 'center'
         return False
 
-    def on_numpad_event(self, kind: str, target: str):
-        if kind == "flick":
-            flick_data = KANA_FLICKS.get(target, {'center': target})
-            self.handle_flick_tap(target, flick_data)
-        else:
-            self.handle_action(target)
+    def on_numpad_event(self, r: int, c: int):
+        if r < len(self.current_matrix) and c < len(self.current_matrix[r]):
+            cell_info = self.current_matrix[r][c]
+            if cell_info["type"] == "flick":
+                key_name = cell_info["key"]
+                flick_data = cell_info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
+                self.handle_flick_tap(key_name, flick_data)
+            else:
+                self.handle_action(cell_info.get("action"))
 
     def _cancel_toggle_timer(self):
         if self.toggle_timer_id is not None:
@@ -614,11 +625,20 @@ class FlickTuxWindow(Gtk.Window):
         elif action == "dakuten":
             self.apply_dakuten()
         elif action == "mode":
-            XDO.key("Hankaku_Zenkaku")
+            # Cycle modes: kana -> katakana -> alpha -> number -> kana
+            modes = ["kana", "katakana", "alpha", "number"]
+            curr_idx = modes.index(self.input_mode) if self.input_mode in modes else 0
+            self.input_mode = modes[(curr_idx + 1) % len(modes)]
+            self.save_layout(self.current_layout_name)
+            self.rebuild_keys()
         elif action == "number":
-            self.type_char("1")
+            self.input_mode = "number" if self.input_mode != "number" else "kana"
+            self.save_layout(self.current_layout_name)
+            self.rebuild_keys()
         elif action == "symbol":
-            self.type_char("・")
+            self.input_mode = "alpha" if self.input_mode != "alpha" else "kana"
+            self.save_layout(self.current_layout_name)
+            self.rebuild_keys()
 
     def type_char(self, char):
         self.last_char = char
