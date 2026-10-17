@@ -22,7 +22,7 @@ fi
 # 1. Install dependencies
 echo "📦 Checking and installing system dependencies..."
 apt-get update -qq
-apt-get install -y -qq python3 python3-gi python3-gi-cairo python3-xlib gir1.2-gtk-3.0 xdotool xsetwacom xinput >/dev/null
+apt-get install -y -qq python3 python3-gi python3-gi-cairo python3-xlib gir1.2-gtk-3.0 xdotool xserver-xorg-input-wacom xinput >/dev/null || true
 
 # 2. Deploy source to /opt/flicktux
 echo "📂 Copying files to ${INSTALL_DIR}..."
