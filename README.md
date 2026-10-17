@@ -1,6 +1,10 @@
 # 🐧 FlickTux (`flktux`)
 
-> **ペンタブレット ＆ 10キー配列に対応した、Linux用フローティング・日本語フリック入力キーボード**
+<p align="center">
+  <img src="assets/icon.png" alt="FlickTux Icon" width="220" style="border-radius: 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+  <br>
+  <em>ペンタブ＆10キー対応 Linuxフローティング・フリックキーボード</em>
+</p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux%20(X11)-orange.svg)]()

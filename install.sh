@@ -29,33 +29,47 @@ echo "📂 Copying files to ${INSTALL_DIR}..."
 mkdir -p "${INSTALL_DIR}"
 cp -r "${SCRIPT_DIR}/flktux" "${INSTALL_DIR}/"
 cp -r "${SCRIPT_DIR}/bin" "${INSTALL_DIR}/"
+[ -d "${SCRIPT_DIR}/assets" ] && cp -r "${SCRIPT_DIR}/assets" "${INSTALL_DIR}/"
 chmod -R a+rX "${INSTALL_DIR}"
 chmod a+rx "${INSTALL_DIR}/bin/flktux" "${INSTALL_DIR}/bin/flktux-settings"
 
-# 3. Create symlinks in /usr/local/bin
+# 3. Install Icon to system paths
+echo "🎨 Installing application icons..."
+if [ -f "${INSTALL_DIR}/assets/icon.png" ]; then
+    mkdir -p /usr/share/pixmaps
+    cp "${INSTALL_DIR}/assets/icon.png" /usr/share/pixmaps/flicktux.png
+    mkdir -p /usr/share/icons/hicolor/512x512/apps
+    cp "${INSTALL_DIR}/assets/icon.png" /usr/share/icons/hicolor/512x512/apps/flicktux.png
+fi
+
+# 4. Create symlinks in /usr/local/bin
 echo "🔗 Creating symlinks in ${BIN_DIR}..."
 ln -sf "${INSTALL_DIR}/bin/flktux" "${BIN_DIR}/flktux"
 ln -sf "${INSTALL_DIR}/bin/flktux-settings" "${BIN_DIR}/flktux-settings"
 
-# 4. Install desktop launchers
+# 5. Install desktop launchers
 echo "🖥️ Installing desktop shortcuts..."
 cp "${SCRIPT_DIR}/desktop/flktux.desktop" "${DESKTOP_APPS}/flktux.desktop"
 cp "${SCRIPT_DIR}/desktop/flktux-settings.desktop" "${DESKTOP_APPS}/flktux-settings.desktop"
 chmod a+r "${DESKTOP_APPS}/flktux*.desktop"
 
-# 5. User desktop shortcuts if non-root user exists
-CURRENT_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "")}"
-if [ -n "${CURRENT_USER}" ] && [ -d "/home/${CURRENT_USER}" ]; then
-    USER_DESKTOP="$(su - "${CURRENT_USER}" -c 'xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/デスクトップ"')"
-    if [ -d "${USER_DESKTOP}" ]; then
-        cp "${SCRIPT_DIR}/desktop/flktux.desktop" "${USER_DESKTOP}/FlickTux.desktop"
-        cp "${SCRIPT_DIR}/desktop/flktux-settings.desktop" "${USER_DESKTOP}/ペンタブ感度設定.desktop"
-        chown "${CURRENT_USER}:${CURRENT_USER}" "${USER_DESKTOP}"/*.desktop
-        chmod +x "${USER_DESKTOP}"/*.desktop
-        su - "${CURRENT_USER}" -c "gio set '${USER_DESKTOP}/FlickTux.desktop' metadata::trusted true 2>/dev/null || true"
-        su - "${CURRENT_USER}" -c "gio set '${USER_DESKTOP}/ペンタブ感度設定.desktop' metadata::trusted true 2>/dev/null || true"
+# 6. User desktop shortcuts
+TARGET_USERS=("${SUDO_USER:-}" "$(logname 2>/dev/null || true)" "gesenu")
+for U in "${TARGET_USERS[@]}"; do
+    if [ -n "${U}" ] && [ -d "/home/${U}" ]; then
+        for D in "/home/${U}/デスクトップ" "/home/${U}/Desktop"; do
+            if [ -d "${D}" ]; then
+                cp "${SCRIPT_DIR}/desktop/flktux.desktop" "${D}/FlickTux.desktop"
+                cp "${SCRIPT_DIR}/desktop/flktux-settings.desktop" "${D}/ペンタブ感度設定.desktop"
+                chown "${U}:${U}" "${D}"/FlickTux.desktop "${D}"/ペンタブ感度設定.desktop
+                chmod +x "${D}"/FlickTux.desktop "${D}"/ペンタブ感度設定.desktop
+                su - "${U}" -c "DISPLAY=:0 gio set '${D}/FlickTux.desktop' metadata::trusted true 2>/dev/null || true"
+                su - "${U}" -c "DISPLAY=:0 gio set '${D}/ペンタブ感度設定.desktop' metadata::trusted true 2>/dev/null || true"
+            fi
+        done
+        break
     fi
-fi
+done
 
 echo "=================================================================="
 echo "🎉 FlickTux (flktux) successfully installed!"

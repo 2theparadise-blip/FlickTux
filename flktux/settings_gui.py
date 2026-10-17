@@ -5,6 +5,7 @@ flktux.settings_gui: Wacom tablet sensitivity & Flick settings center
 Includes live drawing test canvas with pressure sensitivity feedback!
 """
 
+import os
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
@@ -125,6 +126,19 @@ class SettingsDialog(Gtk.Window):
         self.set_default_size(520, 620)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(12)
+
+        # Set window icon
+        for icon_path in [
+            "/opt/flicktux/assets/icon.png",
+            "/usr/share/pixmaps/flicktux.png",
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "icon.png"),
+        ]:
+            if os.path.exists(icon_path):
+                try:
+                    self.set_icon_from_file(icon_path)
+                    break
+                except Exception:
+                    pass
 
         self.cfg = WACOM.load_settings()
 

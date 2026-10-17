@@ -216,6 +216,19 @@ class FlickTuxWindow(Gtk.Window):
         self.set_resizable(False)
         self.set_app_paintable(True)
 
+        # Set window icon
+        for icon_path in [
+            "/opt/flicktux/assets/icon.png",
+            "/usr/share/pixmaps/flicktux.png",
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "icon.png"),
+        ]:
+            if os.path.exists(icon_path):
+                try:
+                    self.set_icon_from_file(icon_path)
+                    break
+                except Exception:
+                    pass
+
         self.current_layout_name = "Google"
         self.input_mode = "kana"  # 'kana' | 'katakana' | 'alpha' | 'number'
         self.toggle_timeout_ms = DEFAULT_TOGGLE_TIMEOUT_MS
