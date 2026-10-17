@@ -6,10 +6,11 @@ Includes live drawing test canvas with pressure sensitivity feedback!
 """
 
 import os
+import cairo
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, Gdk, cairo
+from gi.repository import Gtk, Gdk
 
 from .wacom import WACOM, PROFILES, PRESSURE_CURVES
 
