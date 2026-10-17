@@ -51,7 +51,7 @@ ln -sf "${INSTALL_DIR}/bin/flktux-settings" "${BIN_DIR}/flktux-settings"
 echo "🖥️ Installing desktop shortcuts..."
 cp "${SCRIPT_DIR}/desktop/flktux.desktop" "${DESKTOP_APPS}/flktux.desktop"
 cp "${SCRIPT_DIR}/desktop/flktux-settings.desktop" "${DESKTOP_APPS}/flktux-settings.desktop"
-chmod a+r "${DESKTOP_APPS}/flktux*.desktop"
+chmod a+r "${DESKTOP_APPS}/flktux.desktop" "${DESKTOP_APPS}/flktux-settings.desktop"
 
 # 6. User desktop shortcuts
 TARGET_USERS=("${SUDO_USER:-}" "$(logname 2>/dev/null || true)" "gesenu")
