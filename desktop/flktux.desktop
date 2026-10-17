@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FlickTux (フリック入力)
+Comment=ペンタブ・10キー対応のLinux用フローティング・フリックキーボード (F12で開閉可能)
+Exec=flktux toggle
+Icon=input-keyboard
+Terminal=false
+Categories=Utility;InputMethod;
+StartupNotify=false

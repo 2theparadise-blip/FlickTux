@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+flktux-settings: FlickTux & Wacom Tablet Settings Launcher
+"""
+
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+PKG_ROOT = os.path.dirname(SCRIPT_DIR)
+if PKG_ROOT not in sys.path:
+    sys.path.insert(0, PKG_ROOT)
+
+from flktux.settings_gui import main
+
+if __name__ == '__main__':
+    main()
