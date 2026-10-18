@@ -711,11 +711,9 @@ class FlickTuxWindow(Gtk.Window):
             key_name = info["key"]
             flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
 
-            if button == 3:
+            # button != 1 (2本指タップ/右クリック等) による勝手な誤字入力を防止
+            if button != 1:
                 self.commit_toggle()
-                char = flick_data.get(flick_dir if flick_dir != 'center' else 'left', key_name) if flick_data else key_name
-                if char:
-                    self.type_char(char)
             else:
                 if flick_dir != 'center':
                     self.commit_toggle()

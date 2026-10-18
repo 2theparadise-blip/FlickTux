@@ -7,36 +7,75 @@ Command name: flktux
 
 import sys
 import os
+import signal
 import subprocess
 
-# Ensure package directory is in sys.path
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 PKG_ROOT = os.path.dirname(SCRIPT_DIR)
 if PKG_ROOT not in sys.path:
     sys.path.insert(0, PKG_ROOT)
 
+PID_FILE = os.path.expanduser("~/.config/flktux/flktux.pid")
 
-def is_running():
+
+def get_running_pids():
+    pids = []
+    my_pid = os.getpid()
+
+    # 1. Check PID file
+    if os.path.exists(PID_FILE):
+        try:
+            with open(PID_FILE, "r") as f:
+                p = int(f.read().strip())
+                if p != my_pid:
+                    try:
+                        os.kill(p, 0)
+                        pids.append(p)
+                    except OSError:
+                        pass
+        except Exception:
+            pass
+
+    # 2. Check via pgrep
     try:
-        out = subprocess.check_output(["pgrep", "-f", "flktux.*ui.py"], text=True)
-        pids = [int(p) for p in out.strip().split() if int(p) != os.getpid()]
-        return pids
+        out = subprocess.check_output(["pgrep", "-f", "flktux"], text=True)
+        for line in out.strip().splitlines():
+            p = int(line.strip())
+            if p != my_pid and p not in pids:
+                pids.append(p)
     except Exception:
-        return []
+        pass
+
+    return pids
 
 
 def toggle():
-    pids = is_running()
+    pids = get_running_pids()
     if pids:
-        for pid in pids:
+        for p in pids:
             try:
-                os.kill(pid, 15)  # SIGTERM
+                os.kill(p, signal.SIGTERM)
+            except Exception:
+                pass
+        if os.path.exists(PID_FILE):
+            try:
+                os.remove(PID_FILE)
             except Exception:
                 pass
         sys.exit(0)
     else:
+        os.makedirs(os.path.dirname(PID_FILE), exist_ok=True)
+        with open(PID_FILE, "w") as f:
+            f.write(str(os.getpid()))
         from flktux.ui import main
-        main()
+        try:
+            main()
+        finally:
+            if os.path.exists(PID_FILE):
+                try:
+                    os.remove(PID_FILE)
+                except Exception:
+                    pass
 
 
 def main_cli():
@@ -50,7 +89,7 @@ def main_cli():
         print("Usage: flktux [COMMAND]")
         print("")
         print("Commands:")
-        print("  (no args)   Start FlickTux floating keyboard")
+        print("  (no args)   Start or toggle FlickTux floating keyboard")
         print("  toggle, -t  Toggle show/hide FlickTux")
         print("  settings,-s Open Wacom & FlickTux sensitivity settings")
         print("  help, -h    Show this help message")
