@@ -36,29 +36,11 @@ except Exception:
     HAS_XLIB = False
 
 def confine_pointer_to_xid(xid: int) -> bool:
-    if not HAS_XLIB or not xid:
-        return False
-    try:
-        d = xdisplay.Display()
-        win = d.create_resource_object('window', xid)
-        mask = (X.ButtonPressMask | X.ButtonReleaseMask | X.PointerMotionMask |
-                X.EnterWindowMask | X.LeaveWindowMask)
-        status = win.grab_pointer(True, mask, X.GrabModeAsync, X.GrabModeAsync, win, X.NONE, X.CurrentTime)
-        d.sync()
-        return status == X.GrabSuccess
-    except Exception as e:
-        print(f"[flktux] XGrabPointer error: {e}", file=sys.stderr)
-        return False
+    # Deprecated XGrabPointer that stole clicks; confinement is now handled via smooth clamp!
+    return True
 
 def ungrab_pointer():
-    if not HAS_XLIB:
-        return
-    try:
-        d = xdisplay.Display()
-        d.ungrab_pointer(X.CurrentTime)
-        d.sync()
-    except Exception:
-        pass
+    pass
 
 CONFIG_DIR = os.path.expanduser("~/.config/flktux")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
@@ -406,15 +388,35 @@ class FlickTuxWindow(Gtk.Window):
 
     def _apply_confine(self):
         if not self.is_confined or not self.get_visible():
+            if getattr(self, '_clamp_timer_id', None):
+                GLib.source_remove(self._clamp_timer_id)
+                self._clamp_timer_id = None
             return False
-        gdk_win = self.get_window()
-        if gdk_win:
-            try:
-                xid = gdk_win.get_xid()
-                confine_pointer_to_xid(xid)
-            except Exception:
-                pass
+        if not getattr(self, '_clamp_timer_id', None):
+            self._clamp_timer_id = GLib.timeout_add(30, self._clamp_pointer)
         return False
+
+    def _clamp_pointer(self):
+        if not self.is_confined or not self.get_visible():
+            self._clamp_timer_id = None
+            return False
+        try:
+            gdk_win = self.get_window()
+            if gdk_win:
+                origin = gdk_win.get_origin()
+                ox, oy = (origin[1], origin[2]) if len(origin) == 3 else origin
+                w, h = gdk_win.get_width(), gdk_win.get_height()
+                seat = gdk_win.get_display().get_default_seat()
+                device = seat.get_pointer()
+                screen, px, py = device.get_position()
+                margin = 3
+                clamp_x = max(ox + margin, min(ox + w - margin, px))
+                clamp_y = max(oy + margin, min(oy + h - margin, py))
+                if px != clamp_x or py != clamp_y:
+                    device.warp(screen, clamp_x, clamp_y)
+        except Exception:
+            pass
+        return True
 
     def on_toggle_confine(self, btn):
         self.is_confined = not self.is_confined
@@ -426,9 +428,9 @@ class FlickTuxWindow(Gtk.Window):
         else:
             self.confine_btn.set_label("🔓")
             ctx.remove_class("confined")
-            ungrab_pointer()
-
-    def on_close_clicked(self, widget):
+            if getattr(self, '_clamp_timer_id', None):
+                GLib.source_remove(self._clamp_timer_id)
+                self._clamp_timer_id = None
         ungrab_pointer()
         Gtk.main_quit()
 
