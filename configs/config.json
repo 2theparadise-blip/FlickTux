@@ -1,0 +1,27 @@
+{
+  "layout": "google",
+  "mode": "kana",
+  "keyboard_width": 600.0,
+  "keyboard_height": 480.0,
+  "flick_threshold_px": 18.0,
+  "flick_commit": "threshold",
+  "toggle_timeout_ms": 500,
+  "tablet_area": {
+    "x": 0.0,
+    "y": 0.0,
+    "w": 1.0,
+    "h": 1.0
+  },
+  "pen": {
+    "press_threshold": 0.03,
+    "release_threshold": 0.015,
+    "smoothing": 1.0
+  },
+  "hook_trigger": {
+    "enabled": false,
+    "input_device": null,
+    "key_code": "KEY_PHONE",
+    "on_offhook": "xdg-open 'https://gemini.google.com'",
+    "on_onhook": ""
+  }
+}

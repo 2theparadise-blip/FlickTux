@@ -166,37 +166,153 @@ def get_layout(layout_name: str, mode: str = "kana"):
              {"type": "flick", "key": k3, "num": "3", "flick_data": fd_map.get(k3)},
              {"type": "action", "label": "次へ", "num": "+", "action": "next", "style": "action-cell"}],
             [{"type": "flick", "key": k0, "num": "0", "flick_data": fd_map.get(k0)},
-             {"type": "flick", "key": kdot, "num": ".", "flick_data": fd_map.get(kdot)},
              {"type": "action", "label": mode_label, "num": "切替", "action": "mode", "style": "action-cell"},
+             {"type": "flick", "key": ".", "num": ".", "flick_data": fd_map.get(kdot)},
              {"type": "action", "label": "確定", "num": "Ent", "action": "enter", "style": "enter-cell"}],
+        ]
+
+    # -------------------------------------------------------------------------
+    # 6. プッシュボタン (電話式 12キー / 4 rows x 3 columns)
+    # 1, 2, 3 / 4, 5, 6 / 7, 8, 9 / *, 0, #
+    # -------------------------------------------------------------------------
+    if layout_name in ("プッシュボタン", "push_phone", "12キー"):
+        if mode == "nav":
+            return [
+                [{"type": "action", "label": "Esc", "num": "1", "action": "esc", "style": "action-cell"},
+                 {"type": "action", "label": "▲ 上", "num": "2", "action": "up", "style": "action-cell"},
+                 {"type": "action", "label": "⌫", "num": "3", "action": "backspace", "style": "action-cell"}],
+                [{"type": "action", "label": "◀ 左", "num": "4", "action": "left", "style": "action-cell"},
+                 {"type": "action", "label": "決定", "num": "5", "action": "enter", "style": "action-cell"},
+                 {"type": "action", "label": "▶ 右", "num": "6", "action": "right", "style": "action-cell"}],
+                [{"type": "action", "label": "Tab", "num": "7", "action": "tab", "style": "action-cell"},
+                 {"type": "action", "label": "▼ 下", "num": "8", "action": "down", "style": "action-cell"},
+                 {"type": "action", "label": "Space", "num": "9", "action": "space", "style": "action-cell"}],
+                [{"type": "action", "label": mode_label, "num": "*", "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "変換", "num": "0", "action": "convert", "style": "action-cell"},
+                 {"type": "action", "label": "確定", "num": "#", "action": "enter", "style": "enter-cell"}],
+            ]
+
+        if mode == "katakana":
+            p0, p1, p2 = "ア", "カ", "サ"
+            p3, p4, p5 = "タ", "ナ", "ハ"
+            p6, p7, p8 = "マ", "ヤ", "ラ"
+            p9, pdot   = "ワ", "、。"
+            pfd_map = KATAKANA_FLICKS
+            pya_fd = KATAKANA_FLICKS['ヤ']
+            pdak_label = "゛゜小"
+        elif mode == "alpha":
+            p0, p1, p2 = "@", "abc", "def"
+            p3, p4, p5 = "ghi", "jkl", "mno"
+            p6, p7, p8 = "pqrs", "tuv", "wxyz"
+            p9, pdot   = "␣", ".,?!"
+            pfd_map = ALPHA_FLICKS
+            pya_fd = ALPHA_FLICKS['tuv']
+            pdak_label = "a/A"
+        elif mode == "number":
+            p0, p1, p2 = "1", "2", "3"
+            p3, p4, p5 = "4", "5", "6"
+            p6, p7, p8 = "7", "8", "9"
+            p9, pdot   = "0", "."
+            pfd_map = NUMBER_FLICKS
+            pya_fd = NUMBER_FLICKS['8']
+            pdak_label = "+/-"
+        else: # kana
+            p0, p1, p2 = "あ", "か", "さ"
+            p3, p4, p5 = "た", "な", "は"
+            p6, p7, p8 = "ま", "や", "ら"
+            p9, pdot   = "わ", "、。"
+            pfd_map = KANA_FLICKS
+            pya_fd = YA_ANDROID
+            pdak_label = "゛゜小"
+
+        return [
+            [{"type": "flick", "key": p0, "num": "1", "flick_data": pfd_map.get(p0)},
+             {"type": "flick", "key": p1, "num": "2", "flick_data": pfd_map.get(p1)},
+             {"type": "flick", "key": p2, "num": "3", "flick_data": pfd_map.get(p2)}],
+            [{"type": "flick", "key": p3, "num": "4", "flick_data": pfd_map.get(p3)},
+             {"type": "flick", "key": p4, "num": "5", "flick_data": pfd_map.get(p4)},
+             {"type": "flick", "key": p5, "num": "6", "flick_data": pfd_map.get(p5)}],
+            [{"type": "flick", "key": p6, "num": "7", "flick_data": pfd_map.get(p6)},
+             {"type": "flick", "key": p7, "num": "8", "flick_data": pya_fd},
+             {"type": "flick", "key": p8, "num": "9", "flick_data": pfd_map.get(p8)}],
+            [{"type": "action", "label": pdak_label, "num": "*", "action": "dakuten", "style": "action-cell"},
+             {"type": "flick", "key": p9, "num": "0", "flick_data": pfd_map.get(p9)},
+             {"type": "action", "label": "確定", "num": "#", "action": "enter", "style": "enter-cell"}],
         ]
 
     # -------------------------------------------------------------------------
     # 1. Google / 2. Galaxy / 3. iPhone / 4. ガラケー (4 rows x 5 columns)
     # -------------------------------------------------------------------------
     if mode == "nav":
-        return [
-            [{"type": "action", "label": "Esc", "action": "esc", "style": "action-cell"},
-             {"type": "action", "label": "Home", "action": "home", "style": "action-cell"},
-             {"type": "action", "label": "▲ 上", "action": "up", "style": "action-cell"},
-             {"type": "action", "label": "End", "action": "end", "style": "action-cell"},
-             {"type": "action", "label": "⌫", "action": "backspace", "style": "action-cell"}],
-            [{"type": "action", "label": "Tab", "action": "tab", "style": "action-cell"},
-             {"type": "action", "label": "◀ 左", "action": "left", "style": "action-cell"},
-             {"type": "action", "label": "決定", "action": "enter", "style": "action-cell"},
-             {"type": "action", "label": "▶ 右", "action": "right", "style": "action-cell"},
-             {"type": "action", "label": "PgUp", "action": "page_up", "style": "action-cell"}],
-            [{"type": "action", "label": "Shift", "action": "shift", "style": "action-cell"},
-             {"type": "action", "label": "Ctrl", "action": "ctrl", "style": "action-cell"},
-             {"type": "action", "label": "▼ 下", "action": "down", "style": "action-cell"},
-             {"type": "action", "label": "S-Tab", "action": "shift_tab", "style": "action-cell"},
-             {"type": "action", "label": "PgDn", "action": "page_down", "style": "action-cell"}],
-            [{"type": "action", "label": "Space", "action": "space", "style": "action-cell"},
-             {"type": "action", "label": "Del", "action": "delete", "style": "action-cell"},
-             {"type": "action", "label": "変換", "action": "convert", "style": "action-cell"},
-             {"type": "action", "label": mode_label, "action": "mode", "style": "action-cell"},
-             {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell"}],
-        ]
+        if layout_name == "iPhone":
+            return [
+                [{"type": "action", "label": "☆123", "action": "number", "style": "action-cell"},
+                 {"type": "action", "label": "Home", "action": "home", "style": "action-cell"},
+                 {"type": "action", "label": "▲ 上", "action": "up", "style": "action-cell"},
+                 {"type": "action", "label": "End", "action": "end", "style": "action-cell"},
+                 {"type": "action", "label": "⌫", "action": "backspace", "style": "action-cell"}],
+                [{"type": "action", "label": "ABC", "action": "alpha", "style": "action-cell"},
+                 {"type": "action", "label": "◀ 左", "action": "left", "style": "action-cell"},
+                 {"type": "action", "label": "決定", "action": "enter", "style": "action-cell"},
+                 {"type": "action", "label": "▶ 右", "action": "right", "style": "action-cell"},
+                 {"type": "action", "label": "Space", "action": "space", "style": "action-cell"}],
+                [{"type": "action", "label": "Shift", "action": "shift", "style": "action-cell"},
+                 {"type": "action", "label": "Ctrl", "action": "ctrl", "style": "action-cell"},
+                 {"type": "action", "label": "▼ 下", "action": "down", "style": "action-cell"},
+                 {"type": "action", "label": "Tab", "action": "tab", "style": "action-cell"},
+                 {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell", "rowSpan": 2}],
+                [{"type": "action", "label": "🌐", "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "Del", "action": "delete", "style": "action-cell"},
+                 {"type": "action", "label": "S-Tab", "action": "shift_tab", "style": "action-cell"},
+                 {"type": "action", "label": "Esc", "action": "esc", "style": "action-cell"},
+                 {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell"}],
+            ]
+        elif layout_name == "Galaxy":
+            return [
+                [{"type": "action", "label": mode_label, "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "Home", "action": "home", "style": "action-cell"},
+                 {"type": "action", "label": "▲ 上", "action": "up", "style": "action-cell"},
+                 {"type": "action", "label": "End", "action": "end", "style": "action-cell"},
+                 {"type": "action", "label": "⌫", "action": "backspace", "style": "action-cell"}],
+                [{"type": "action", "label": "数字", "action": "number", "style": "action-cell"},
+                 {"type": "action", "label": "Tab", "action": "tab", "style": "action-cell"},
+                 {"type": "action", "label": "決定", "action": "enter", "style": "action-cell"},
+                 {"type": "action", "label": "S-Tab", "action": "shift_tab", "style": "action-cell"},
+                 {"type": "action", "label": "◀ 左", "action": "left", "style": "action-cell"}],
+                [{"type": "action", "label": "記号", "action": "symbol", "style": "action-cell"},
+                 {"type": "action", "label": "Ctrl", "action": "ctrl", "style": "action-cell"},
+                 {"type": "action", "label": "▼ 下", "action": "down", "style": "action-cell"},
+                 {"type": "action", "label": "Shift", "action": "shift", "style": "action-cell"},
+                 {"type": "action", "label": "▶ 右", "action": "right", "style": "action-cell"}],
+                [{"type": "action", "label": "Space", "action": "space", "style": "action-cell"},
+                 {"type": "action", "label": "Del", "action": "delete", "style": "action-cell"},
+                 {"type": "action", "label": "Esc", "action": "esc", "style": "action-cell"},
+                 {"type": "action", "label": "次へ", "action": "next", "style": "action-cell"},
+                 {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell"}],
+            ]
+        else: # Google / Garakei
+            return [
+                [{"type": "action", "label": mode_label, "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "Home", "action": "home", "style": "action-cell"},
+                 {"type": "action", "label": "▲ 上", "action": "up", "style": "action-cell"},
+                 {"type": "action", "label": "End", "action": "end", "style": "action-cell"},
+                 {"type": "action", "label": "⌫", "action": "backspace", "style": "action-cell"}],
+                [{"type": "action", "label": "◀ 左", "action": "left", "style": "action-cell"},
+                 {"type": "action", "label": "Tab", "action": "tab", "style": "action-cell"},
+                 {"type": "action", "label": "決定", "action": "enter", "style": "action-cell"},
+                 {"type": "action", "label": "S-Tab", "action": "shift_tab", "style": "action-cell"},
+                 {"type": "action", "label": "Space", "action": "space", "style": "action-cell"}],
+                [{"type": "action", "label": "▶ 右", "action": "right", "style": "action-cell"},
+                 {"type": "action", "label": "Ctrl", "action": "ctrl", "style": "action-cell"},
+                 {"type": "action", "label": "▼ 下", "action": "down", "style": "action-cell"},
+                 {"type": "action", "label": "Shift", "action": "shift", "style": "action-cell"},
+                 {"type": "action", "label": "変換", "action": "convert", "style": "action-cell"}],
+                [{"type": "action", "label": "記号", "action": "symbol", "style": "action-cell"},
+                 {"type": "action", "label": "Del", "action": "delete", "style": "action-cell"},
+                 {"type": "action", "label": "Esc", "action": "esc", "style": "action-cell"},
+                 {"type": "action", "label": "次へ", "action": "next", "style": "action-cell"},
+                 {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell"}],
+            ]
 
     if mode == "katakana":
         c0, c1, c2 = "ア", "カ", "サ"
@@ -232,6 +348,9 @@ def get_layout(layout_name: str, mode: str = "kana"):
         dak_label = "゛゜小"
 
     if layout_name == "Galaxy":
+        # Galaxy (Samsung 日本語テンキー):
+        # 左列: mode_label, 数字, 記号, 空白
+        # 右列: ⌫, ◀, ▶, 確定
         return [
             [{"type": "action", "label": mode_label, "action": "mode", "style": "action-cell"},
              {"type": "flick", "key": c0, "flick_data": fd_map.get(c0)},
@@ -255,27 +374,31 @@ def get_layout(layout_name: str, mode: str = "kana"):
              {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell"}],
         ]
     elif layout_name == "iPhone":
+        # iPhone (iOS 日本語かなフリック):
+        # 左列: ☆123, ABC, 小 ゛゜, 🌐
+        # 右列: ⌫, 空白, 改行 (rowSpan: 2)
+        # 中央下段: 空き, わ, 、。？！
         return [
-            [{"type": "action", "label": mode_label, "action": "mode", "style": "action-cell"},
+            [{"type": "action", "label": "☆123", "action": "number", "style": "action-cell"},
              {"type": "flick", "key": c0, "flick_data": fd_map.get(c0)},
              {"type": "flick", "key": c1, "flick_data": fd_map.get(c1)},
              {"type": "flick", "key": c2, "flick_data": fd_map.get(c2)},
              {"type": "action", "label": "⌫", "action": "backspace", "style": "action-cell"}],
-            [{"type": "action", "label": "1 2 3", "action": "number", "style": "action-cell"},
+            [{"type": "action", "label": "ABC", "action": "alpha", "style": "action-cell"},
              {"type": "flick", "key": c3, "flick_data": fd_map.get(c3)},
              {"type": "flick", "key": c4, "flick_data": fd_map.get(c4)},
              {"type": "flick", "key": c5, "flick_data": fd_map.get(c5)},
              {"type": "action", "label": "空白", "action": "space", "style": "action-cell"}],
-            [{"type": "action", "label": "◀", "action": "left", "style": "action-cell"},
+            [{"type": "action", "label": "小 ゛゜" if mode == "kana" else dak_label, "action": "dakuten", "style": "action-cell"},
              {"type": "flick", "key": c6, "flick_data": fd_map.get(c6)},
              {"type": "flick", "key": c7, "flick_data": ya_fd},
              {"type": "flick", "key": c8, "flick_data": fd_map.get(c8)},
-             {"type": "action", "label": "▶", "action": "right", "style": "action-cell"}],
-            [{"type": "action", "label": "記号", "action": "symbol", "style": "action-cell"},
-             {"type": "action", "label": dak_label, "action": "dakuten", "style": "action-cell"},
+             {"type": "action", "label": "改行", "action": "enter", "style": "enter-cell", "rowSpan": 2}],
+            [{"type": "action", "label": "🌐", "action": "mode", "style": "action-cell"},
+             {"type": "action", "label": "マイク", "action": "space", "style": "action-cell"},
              {"type": "flick", "key": c9, "flick_data": fd_map.get(c9)},
              {"type": "flick", "key": cdot, "flick_data": fd_map.get(cdot)},
-             {"type": "action", "label": "確定", "action": "enter", "style": "enter-cell"}],
+             {"type": "action", "label": "改行", "action": "enter", "style": "enter-cell"}],
         ]
     elif layout_name == "ガラケー":
         return [
@@ -300,7 +423,11 @@ def get_layout(layout_name: str, mode: str = "kana"):
              {"type": "flick", "key": cdot, "num": "#", "flick_data": fd_map.get(cdot)},
              {"type": "action", "label": "次へ", "action": "next", "style": "action-cell"}],
         ]
-    else: # Google (default)
+    else: # Google (Gboard 日本語 12キー)
+        # 実機 Gboard 配置:
+        # 左列: mode_label, ◀, ▶, 記号
+        # 右列: ⌫, 空白, 変換, 確定
+        # 中央下段: ゛゜小, わ, 、。
         return [
             [{"type": "action", "label": mode_label, "action": "mode", "style": "action-cell"},
              {"type": "flick", "key": c0, "flick_data": fd_map.get(c0)},
@@ -311,13 +438,13 @@ def get_layout(layout_name: str, mode: str = "kana"):
              {"type": "flick", "key": c3, "flick_data": fd_map.get(c3)},
              {"type": "flick", "key": c4, "flick_data": fd_map.get(c4)},
              {"type": "flick", "key": c5, "flick_data": fd_map.get(c5)},
-             {"type": "action", "label": "▶", "action": "right", "style": "action-cell"}],
-            [{"type": "action", "label": "記号", "action": "symbol", "style": "action-cell"},
+             {"type": "action", "label": "空白", "action": "space", "style": "action-cell"}],
+            [{"type": "action", "label": "▶", "action": "right", "style": "action-cell"},
              {"type": "flick", "key": c6, "flick_data": fd_map.get(c6)},
              {"type": "flick", "key": c7, "flick_data": ya_fd},
              {"type": "flick", "key": c8, "flick_data": fd_map.get(c8)},
-             {"type": "action", "label": "空白", "action": "space", "style": "action-cell"}],
-            [{"type": "action", "label": "変換", "action": "convert", "style": "action-cell"},
+             {"type": "action", "label": "変換", "action": "convert", "style": "action-cell"}],
+            [{"type": "action", "label": "記号", "action": "symbol", "style": "action-cell"},
              {"type": "action", "label": dak_label, "action": "dakuten", "style": "action-cell"},
              {"type": "flick", "key": c9, "flick_data": fd_map.get(c9)},
              {"type": "flick", "key": cdot, "flick_data": fd_map.get(cdot)},
@@ -332,6 +459,7 @@ LAYOUTS = {
     "iPhone": get_layout("iPhone", "kana"),
     "ガラケー": get_layout("ガラケー", "kana"),
     "10キー": get_layout("10キー", "kana"),
+    "プッシュボタン": get_layout("プッシュボタン", "kana"),
 }
 
 

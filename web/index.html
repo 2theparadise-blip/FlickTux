@@ -296,11 +296,12 @@
     </div>
     <div class="controls">
       <select id="presetSelect">
-        <option value="google">Google</option>
-        <option value="galaxy">Galaxy</option>
+        <option value="google">Google (20キー)</option>
         <option value="iphone">iPhone (19キー結合)</option>
-        <option value="garakei">ガラケー</option>
-        <option value="tenkey">10キー</option>
+        <option value="galaxy">Galaxy (20キー)</option>
+        <option value="tenkey">10キー (20キー)</option>
+        <option value="push_phone">プッシュボタン (12キー)</option>
+        <option value="garakei">ガラケー (20キー)</option>
       </select>
       <button id="btnReload" title="実機から再読み込み">🔄 再読込</button>
       <button id="btnReset" class="btn-danger" title="初期値に戻す">初期化</button>
@@ -321,8 +322,22 @@
     </div>
 
     <div class="editor-panel">
+      <!-- Grid Dimensions & Key Expansion Controls -->
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; font-weight: bold; color: var(--primary);">📐 ボタン増設・グリッド拡張</span>
+          <span id="gridDimensions" style="font-size: 0.8rem; color: var(--text-muted);">4行 × 5列</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button id="btnAddRow" style="font-size: 0.8rem; padding: 6px;">➕ 行を追加 (下)</button>
+          <button id="btnRemoveRow" style="font-size: 0.8rem; padding: 6px;" class="btn-danger">➖ 行を削除</button>
+          <button id="btnAddCol" style="font-size: 0.8rem; padding: 6px;">➕ 列を追加 (右)</button>
+          <button id="btnRemoveCol" style="font-size: 0.8rem; padding: 6px;" class="btn-danger">➖ 列を削除</button>
+        </div>
+      </div>
+
       <h3>キープロパティ編集</h3>
-      <div id="noSelection" style="color: var(--text-muted); font-size: 0.85rem; padding: 20px 0;">
+      <div id="noSelection" style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">
         左のキーボードからキーをクリックして選択してください。
       </div>
 
@@ -456,6 +471,9 @@
       const grid = currentData.modes[currentMode];
       const rows = currentData.rows || grid.length;
       const cols = currentData.cols || (grid[0] ? grid[0].length : 5);
+
+      const dimEl = document.getElementById('gridDimensions');
+      if (dimEl) dimEl.textContent = `${rows}行 × ${cols}列 (${rows * cols}キー)`;
 
       container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
       container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
@@ -615,6 +633,60 @@
 
     // Action buttons
     document.getElementById('btnReload').onclick = () => loadPresetData(currentPresetId);
+
+    // Grid Dimensions & Expansion Handlers
+    document.getElementById('btnAddRow').onclick = () => {
+      if (!currentData || !currentData.modes) return;
+      const cols = currentData.cols || (currentData.modes[currentMode][0] ? currentData.modes[currentMode][0].length : 5);
+      for (const mode in currentData.modes) {
+        const newRow = [];
+        for (let c = 0; c < cols; c++) {
+          newRow.push({ type: "action", label: "␣", action: "space", style: "action-cell" });
+        }
+        currentData.modes[mode].push(newRow);
+      }
+      currentData.rows = (currentData.rows || 4) + 1;
+      renderKeyboard();
+      showToast(`行を追加しました (全${currentData.rows}行)`);
+    };
+
+    document.getElementById('btnRemoveRow').onclick = () => {
+      if (!currentData || !currentData.modes || currentData.rows <= 1) return;
+      for (const mode in currentData.modes) {
+        currentData.modes[mode].pop();
+      }
+      currentData.rows--;
+      selectedCellCoord = null;
+      updateEditor();
+      renderKeyboard();
+      showToast(`末尾行を削除しました (全${currentData.rows}行)`);
+    };
+
+    document.getElementById('btnAddCol').onclick = () => {
+      if (!currentData || !currentData.modes) return;
+      for (const mode in currentData.modes) {
+        currentData.modes[mode].forEach(row => {
+          row.push({ type: "action", label: "␣", action: "space", style: "action-cell" });
+        });
+      }
+      currentData.cols = (currentData.cols || 5) + 1;
+      renderKeyboard();
+      showToast(`列を追加しました (全${currentData.cols}列)`);
+    };
+
+    document.getElementById('btnRemoveCol').onclick = () => {
+      if (!currentData || !currentData.modes || currentData.cols <= 1) return;
+      for (const mode in currentData.modes) {
+        currentData.modes[mode].forEach(row => {
+          row.pop();
+        });
+      }
+      currentData.cols--;
+      selectedCellCoord = null;
+      updateEditor();
+      renderKeyboard();
+      showToast(`末尾列を削除しました (全${currentData.cols}列)`);
+    };
 
     document.getElementById('btnSave').onclick = async () => {
       if (!currentData) return;

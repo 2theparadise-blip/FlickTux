@@ -83,6 +83,15 @@ pub fn handle_request(method: &Method, path: &str, body: &str) -> (u16, &'static
             }
         }
 
+        // GET /api/devices
+        (Method::Get, "/api/devices") => {
+            let devs = crate::input::device_scanner::scan_devices().unwrap_or_default();
+            match serde_json::to_string(&devs) {
+                Ok(json) => (200, "application/json; charset=utf-8", json),
+                Err(e) => (500, "application/json", format!(r#"{{"error":"{e}"}}"#)),
+            }
+        }
+
         // POST /api/save
         (Method::Post, "/api/save") => match serde_json::from_str::<Preset>(body) {
             Ok(preset) => {
@@ -197,7 +206,7 @@ mod tests {
                 cols: p.cols,
             });
         }
-        assert_eq!(list.len(), 5);
+        assert_eq!(list.len(), PRESET_IDS.len());
         let json = serde_json::to_string(&list).expect("serialize summary");
         assert!(json.contains("google"));
         assert!(json.contains("iphone"));

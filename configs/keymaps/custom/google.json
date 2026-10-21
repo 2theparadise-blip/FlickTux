@@ -4,11 +4,201 @@
   "rows": 4,
   "cols": 5,
   "modes": {
-    "katakana": [
+    "nav": [
       [
         {
           "type": "action",
-          "label": "ア",
+          "label": "↑",
+          "action": "mode",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "Home",
+          "action": "home",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "▲ 上",
+          "action": "up",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "End",
+          "action": "end",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "⌫",
+          "action": "backspace",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        }
+      ],
+      [
+        {
+          "type": "action",
+          "label": "◀ 左",
+          "action": "left",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "Tab",
+          "action": "tab",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "決定",
+          "action": "enter",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "S-Tab",
+          "action": "shift_tab",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "Space",
+          "action": "space",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        }
+      ],
+      [
+        {
+          "type": "action",
+          "label": "▶ 右",
+          "action": "right",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "Ctrl",
+          "action": "ctrl",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "▼ 下",
+          "action": "down",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "Shift",
+          "action": "shift",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "変換",
+          "action": "convert",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        }
+      ],
+      [
+        {
+          "type": "action",
+          "label": "記号",
+          "action": "symbol",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "Del",
+          "action": "delete",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "Esc",
+          "action": "esc",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "次へ",
+          "action": "next",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
+          "label": "確定",
+          "action": "enter",
+          "num": null,
+          "style": "enter-cell",
+          "row_span": 1,
+          "col_span": 1
+        }
+      ]
+    ],
+    "kana": [
+      [
+        {
+          "type": "action",
+          "label": "あ",
           "action": "mode",
           "num": null,
           "style": "action-cell",
@@ -17,42 +207,42 @@
         },
         {
           "type": "flick",
-          "key": "ア",
+          "key": "あ",
           "num": null,
           "flick_data": {
-            "center": "ア",
-            "left": "イ",
-            "up": "ウ",
-            "right": "エ",
-            "down": "オ"
+            "center": "あ",
+            "left": "い",
+            "up": "う",
+            "right": "え",
+            "down": "お"
           },
           "row_span": 1,
           "col_span": 1
         },
         {
           "type": "flick",
-          "key": "カ",
+          "key": "か",
           "num": null,
           "flick_data": {
-            "center": "カ",
-            "left": "キ",
-            "up": "ク",
-            "right": "ケ",
-            "down": "コ"
+            "center": "か",
+            "left": "き",
+            "up": "く",
+            "right": "け",
+            "down": "こ"
           },
           "row_span": 1,
           "col_span": 1
         },
         {
           "type": "flick",
-          "key": "サ",
+          "key": "さ",
           "num": null,
           "flick_data": {
-            "center": "サ",
-            "left": "シ",
-            "up": "ス",
-            "right": "セ",
-            "down": "ソ"
+            "center": "さ",
+            "left": "し",
+            "up": "す",
+            "right": "せ",
+            "down": "そ"
           },
           "row_span": 1,
           "col_span": 1
@@ -79,104 +269,42 @@
         },
         {
           "type": "flick",
-          "key": "タ",
+          "key": "た",
           "num": null,
           "flick_data": {
-            "center": "タ",
-            "left": "チ",
-            "up": "ツ",
-            "right": "テ",
-            "down": "ト"
+            "center": "た",
+            "left": "ち",
+            "up": "つ",
+            "right": "て",
+            "down": "と"
           },
           "row_span": 1,
           "col_span": 1
         },
         {
           "type": "flick",
-          "key": "ナ",
+          "key": "な",
           "num": null,
           "flick_data": {
-            "center": "ナ",
-            "left": "ニ",
-            "up": "ヌ",
-            "right": "ネ",
-            "down": "ノ"
+            "center": "な",
+            "left": "に",
+            "up": "ぬ",
+            "right": "ね",
+            "down": "の"
           },
           "row_span": 1,
           "col_span": 1
         },
         {
           "type": "flick",
-          "key": "ハ",
+          "key": "は",
           "num": null,
           "flick_data": {
-            "center": "ハ",
-            "left": "ヒ",
-            "up": "フ",
-            "right": "ヘ",
-            "down": "ホ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "▶",
-          "action": "right",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        }
-      ],
-      [
-        {
-          "type": "action",
-          "label": "記号",
-          "action": "symbol",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "マ",
-          "num": null,
-          "flick_data": {
-            "center": "マ",
-            "left": "ミ",
-            "up": "ム",
-            "right": "メ",
-            "down": "モ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "ヤ",
-          "num": null,
-          "flick_data": {
-            "center": "ヤ",
-            "left": "（",
-            "up": "ユ",
-            "right": "）",
-            "down": "ヨ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "ラ",
-          "num": null,
-          "flick_data": {
-            "center": "ラ",
-            "left": "リ",
-            "up": "ル",
-            "right": "レ",
-            "down": "ロ"
+            "center": "は",
+            "left": "ひ",
+            "up": "ふ",
+            "right": "へ",
+            "down": "ほ"
           },
           "row_span": 1,
           "col_span": 1
@@ -194,8 +322,70 @@
       [
         {
           "type": "action",
+          "label": "▶",
+          "action": "right",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "flick",
+          "key": "ま",
+          "num": null,
+          "flick_data": {
+            "center": "ま",
+            "left": "み",
+            "up": "む",
+            "right": "め",
+            "down": "も"
+          },
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "flick",
+          "key": "や",
+          "num": null,
+          "flick_data": {
+            "center": "や",
+            "left": "（",
+            "up": "ゆ",
+            "right": "）",
+            "down": "よ"
+          },
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "flick",
+          "key": "ら",
+          "num": null,
+          "flick_data": {
+            "center": "ら",
+            "left": "り",
+            "up": "る",
+            "right": "れ",
+            "down": "ろ"
+          },
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "action",
           "label": "変換",
           "action": "convert",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        }
+      ],
+      [
+        {
+          "type": "action",
+          "label": "記号",
+          "action": "symbol",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -212,12 +402,12 @@
         },
         {
           "type": "flick",
-          "key": "ワ",
+          "key": "わ",
           "num": null,
           "flick_data": {
-            "center": "ワ",
-            "left": "ヲ",
-            "up": "ン",
+            "center": "わ",
+            "left": "を",
+            "up": "ん",
             "right": "ー",
             "down": "〜"
           },
@@ -366,8 +556,8 @@
         },
         {
           "type": "action",
-          "label": "▶",
-          "action": "right",
+          "label": "空白",
+          "action": "space",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -377,8 +567,8 @@
       [
         {
           "type": "action",
-          "label": "記号",
-          "action": "symbol",
+          "label": "▶",
+          "action": "right",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -428,8 +618,8 @@
         },
         {
           "type": "action",
-          "label": "空白",
-          "action": "space",
+          "label": "変換",
+          "action": "convert",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -439,8 +629,8 @@
       [
         {
           "type": "action",
-          "label": "変換",
-          "action": "convert",
+          "label": "記号",
+          "action": "symbol",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -474,251 +664,6 @@
           "key": ".",
           "num": null,
           "flick_data": null,
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "確定",
-          "action": "enter",
-          "num": null,
-          "style": "enter-cell",
-          "row_span": 1,
-          "col_span": 1
-        }
-      ]
-    ],
-    "kana": [
-      [
-        {
-          "type": "action",
-          "label": "あ",
-          "action": "mode",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "あ",
-          "num": null,
-          "flick_data": {
-            "center": "あ",
-            "left": "い",
-            "up": "う",
-            "right": "え",
-            "down": "お"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "か",
-          "num": null,
-          "flick_data": {
-            "center": "か",
-            "left": "き",
-            "up": "く",
-            "right": "け",
-            "down": "こ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "さ",
-          "num": null,
-          "flick_data": {
-            "center": "さ",
-            "left": "し",
-            "up": "す",
-            "right": "せ",
-            "down": "そ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "⌫",
-          "action": "backspace",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        }
-      ],
-      [
-        {
-          "type": "action",
-          "label": "◀",
-          "action": "left",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "た",
-          "num": null,
-          "flick_data": {
-            "center": "た",
-            "left": "ち",
-            "up": "つ",
-            "right": "て",
-            "down": "と"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "な",
-          "num": null,
-          "flick_data": {
-            "center": "な",
-            "left": "に",
-            "up": "ぬ",
-            "right": "ね",
-            "down": "の"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "は",
-          "num": null,
-          "flick_data": {
-            "center": "は",
-            "left": "ひ",
-            "up": "ふ",
-            "right": "へ",
-            "down": "ほ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "▶",
-          "action": "right",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        }
-      ],
-      [
-        {
-          "type": "action",
-          "label": "記号",
-          "action": "symbol",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "ま",
-          "num": null,
-          "flick_data": {
-            "center": "ま",
-            "left": "み",
-            "up": "む",
-            "right": "め",
-            "down": "も"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "や",
-          "num": null,
-          "flick_data": {
-            "center": "や",
-            "left": "（",
-            "up": "ゆ",
-            "right": "）",
-            "down": "よ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "ら",
-          "num": null,
-          "flick_data": {
-            "center": "ら",
-            "left": "り",
-            "up": "る",
-            "right": "れ",
-            "down": "ろ"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "空白",
-          "action": "space",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        }
-      ],
-      [
-        {
-          "type": "action",
-          "label": "変換",
-          "action": "convert",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "゛゜小",
-          "action": "dakuten",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "わ",
-          "num": null,
-          "flick_data": {
-            "center": "わ",
-            "left": "を",
-            "up": "ん",
-            "right": "ー",
-            "down": "〜"
-          },
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "flick",
-          "key": "、。",
-          "num": null,
-          "flick_data": {
-            "center": "、",
-            "left": "。",
-            "up": "？",
-            "right": "！",
-            "down": "…"
-          },
           "row_span": 1,
           "col_span": 1
         },
@@ -850,8 +795,8 @@
         },
         {
           "type": "action",
-          "label": "▶",
-          "action": "right",
+          "label": "空白",
+          "action": "space",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -861,8 +806,8 @@
       [
         {
           "type": "action",
-          "label": "記号",
-          "action": "symbol",
+          "label": "▶",
+          "action": "right",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -912,8 +857,8 @@
         },
         {
           "type": "action",
-          "label": "空白",
-          "action": "space",
+          "label": "変換",
+          "action": "convert",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -923,8 +868,8 @@
       [
         {
           "type": "action",
-          "label": "変換",
-          "action": "convert",
+          "label": "記号",
+          "action": "symbol",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
@@ -978,41 +923,56 @@
         }
       ]
     ],
-    "nav": [
+    "katakana": [
       [
         {
           "type": "action",
-          "label": "Esc",
-          "action": "esc",
+          "label": "ア",
+          "action": "mode",
           "num": null,
           "style": "action-cell",
           "row_span": 1,
           "col_span": 1
         },
         {
-          "type": "action",
-          "label": "Home",
-          "action": "home",
+          "type": "flick",
+          "key": "ア",
           "num": null,
-          "style": "action-cell",
+          "flick_data": {
+            "center": "ア",
+            "left": "イ",
+            "up": "ウ",
+            "right": "エ",
+            "down": "オ"
+          },
           "row_span": 1,
           "col_span": 1
         },
         {
-          "type": "action",
-          "label": "▲ 上",
-          "action": "up",
+          "type": "flick",
+          "key": "カ",
           "num": null,
-          "style": "action-cell",
+          "flick_data": {
+            "center": "カ",
+            "left": "キ",
+            "up": "ク",
+            "right": "ケ",
+            "down": "コ"
+          },
           "row_span": 1,
           "col_span": 1
         },
         {
-          "type": "action",
-          "label": "End",
-          "action": "end",
+          "type": "flick",
+          "key": "サ",
           "num": null,
-          "style": "action-cell",
+          "flick_data": {
+            "center": "サ",
+            "left": "シ",
+            "up": "ス",
+            "right": "セ",
+            "down": "ソ"
+          },
           "row_span": 1,
           "col_span": 1
         },
@@ -1029,16 +989,7 @@
       [
         {
           "type": "action",
-          "label": "Tab",
-          "action": "tab",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "◀ 左",
+          "label": "◀",
           "action": "left",
           "num": null,
           "style": "action-cell",
@@ -1046,17 +997,61 @@
           "col_span": 1
         },
         {
-          "type": "action",
-          "label": "決定",
-          "action": "enter",
+          "type": "flick",
+          "key": "タ",
           "num": null,
-          "style": "action-cell",
+          "flick_data": {
+            "center": "タ",
+            "left": "チ",
+            "up": "ツ",
+            "right": "テ",
+            "down": "ト"
+          },
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "flick",
+          "key": "ナ",
+          "num": null,
+          "flick_data": {
+            "center": "ナ",
+            "left": "ニ",
+            "up": "ヌ",
+            "right": "ネ",
+            "down": "ノ"
+          },
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "flick",
+          "key": "ハ",
+          "num": null,
+          "flick_data": {
+            "center": "ハ",
+            "left": "ヒ",
+            "up": "フ",
+            "right": "ヘ",
+            "down": "ホ"
+          },
           "row_span": 1,
           "col_span": 1
         },
         {
           "type": "action",
-          "label": "▶ 右",
+          "label": "空白",
+          "action": "space",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        }
+      ],
+      [
+        {
+          "type": "action",
+          "label": "▶",
           "action": "right",
           "num": null,
           "style": "action-cell",
@@ -1064,78 +1059,44 @@
           "col_span": 1
         },
         {
-          "type": "action",
-          "label": "PgUp",
-          "action": "page_up",
+          "type": "flick",
+          "key": "マ",
           "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        }
-      ],
-      [
-        {
-          "type": "action",
-          "label": "Shift",
-          "action": "shift",
-          "num": null,
-          "style": "action-cell",
+          "flick_data": {
+            "center": "マ",
+            "left": "ミ",
+            "up": "ム",
+            "right": "メ",
+            "down": "モ"
+          },
           "row_span": 1,
           "col_span": 1
         },
         {
-          "type": "action",
-          "label": "Ctrl",
-          "action": "ctrl",
+          "type": "flick",
+          "key": "ヤ",
           "num": null,
-          "style": "action-cell",
+          "flick_data": {
+            "center": "ヤ",
+            "left": "（",
+            "up": "ユ",
+            "right": "）",
+            "down": "ヨ"
+          },
           "row_span": 1,
           "col_span": 1
         },
         {
-          "type": "action",
-          "label": "▼ 下",
-          "action": "down",
+          "type": "flick",
+          "key": "ラ",
           "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "S-Tab",
-          "action": "shift_tab",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "PgDn",
-          "action": "page_down",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        }
-      ],
-      [
-        {
-          "type": "action",
-          "label": "Space",
-          "action": "space",
-          "num": null,
-          "style": "action-cell",
-          "row_span": 1,
-          "col_span": 1
-        },
-        {
-          "type": "action",
-          "label": "Del",
-          "action": "delete",
-          "num": null,
-          "style": "action-cell",
+          "flick_data": {
+            "center": "ラ",
+            "left": "リ",
+            "up": "ル",
+            "right": "レ",
+            "down": "ロ"
+          },
           "row_span": 1,
           "col_span": 1
         },
@@ -1147,13 +1108,52 @@
           "style": "action-cell",
           "row_span": 1,
           "col_span": 1
+        }
+      ],
+      [
+        {
+          "type": "action",
+          "label": "記号",
+          "action": "symbol",
+          "num": null,
+          "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
         },
         {
           "type": "action",
-          "label": "↑",
-          "action": "mode",
+          "label": "゛゜小",
+          "action": "dakuten",
           "num": null,
           "style": "action-cell",
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "flick",
+          "key": "ワ",
+          "num": null,
+          "flick_data": {
+            "center": "ワ",
+            "left": "ヲ",
+            "up": "ン",
+            "right": "ー",
+            "down": "〜"
+          },
+          "row_span": 1,
+          "col_span": 1
+        },
+        {
+          "type": "flick",
+          "key": "、。",
+          "num": null,
+          "flick_data": {
+            "center": "、",
+            "left": "。",
+            "up": "？",
+            "right": "！",
+            "down": "…"
+          },
           "row_span": 1,
           "col_span": 1
         },

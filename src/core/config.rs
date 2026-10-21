@@ -52,6 +52,96 @@ impl Default for PenConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+pub struct HookTriggerConfig {
+    pub enabled: bool,
+    pub input_device: Option<String>,
+    pub key_code: String,
+    pub on_offhook: String,
+    pub on_onhook: String,
+}
+
+impl Default for HookTriggerConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            input_device: None,
+            key_code: "KEY_PHONE".into(),
+            on_offhook: "xdg-open 'https://gemini.google.com'".into(),
+            on_onhook: "".into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TabletConfig {
+    pub device_name: String,
+    pub vendor: String,
+    pub pressure_curve_level: u32,
+    pub threshold: f64,
+    pub smoothing: f64,
+    pub aspect_ratio_correction: bool,
+}
+
+impl Default for TabletConfig {
+    fn default() -> Self {
+        Self {
+            device_name: "auto".into(),
+            vendor: "auto".into(),
+            pressure_curve_level: 3,
+            threshold: 12.0,
+            smoothing: 4.0,
+            aspect_ratio_correction: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct NumpadDeviceConfig {
+    pub enabled: bool,
+    pub device_path: Option<String>,
+    pub exclusive_grab: bool,
+    pub mapping_preset: String,
+}
+
+impl Default for NumpadDeviceConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            device_path: None,
+            exclusive_grab: false,
+            mapping_preset: "push_phone".into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct WeylusConfig {
+    pub enabled: bool,
+    pub target_device: String,
+    pub model: String,
+    pub aspect_ratio_4_3: bool,
+    pub palm_rejection: bool,
+    pub ui_scale: f64,
+}
+
+impl Default for WeylusConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            target_device: "Weylus Stylus".into(),
+            model: "ipad".into(),
+            aspect_ratio_4_3: true,
+            palm_rejection: true,
+            ui_scale: 1.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Config {
     pub layout: String,
     pub mode: String,
@@ -65,6 +155,10 @@ pub struct Config {
     pub toggle_timeout_ms: u64,
     pub tablet_area: Area,
     pub pen: PenConfig,
+    pub hook_trigger: HookTriggerConfig,
+    pub tablet: TabletConfig,
+    pub numpad_device: NumpadDeviceConfig,
+    pub weylus: WeylusConfig,
 }
 
 impl Default for Config {
@@ -79,6 +173,10 @@ impl Default for Config {
             toggle_timeout_ms: 500,
             tablet_area: Area::default(),
             pen: PenConfig::default(),
+            hook_trigger: HookTriggerConfig::default(),
+            tablet: TabletConfig::default(),
+            numpad_device: NumpadDeviceConfig::default(),
+            weylus: WeylusConfig::default(),
         }
     }
 }

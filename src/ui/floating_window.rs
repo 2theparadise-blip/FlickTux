@@ -14,7 +14,7 @@ pub mod native_gtk {
     use gtk::glib;
     use gtk::prelude::*;
     use gtk::{
-        Application, ApplicationWindow, Box as GtkBox, Button, CssProvider, DrawingArea,
+        Application, ApplicationWindow, Box as GtkBox, Button, ComboBoxText, CssProvider, DrawingArea,
         EventBox, Grid, Label, Orientation, Overlay, StyleContext,
     };
 
@@ -39,6 +39,20 @@ pub mod native_gtk {
         border-bottom: 1px solid #3c4043;
         padding: 4px 6px;
         border-radius: 12px 12px 0 0;
+    }
+    .layout-combo {
+        background-color: #2b2c2f;
+        color: #8ab4f8;
+        border: 1px solid #5f6368;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+    .layout-combo button {
+        background: transparent;
+        border: none;
+        color: #e8eaed;
+        font-size: 11px;
     }
     .tab-btn {
         background: transparent;
@@ -196,41 +210,79 @@ pub mod native_gtk {
                 Inhibit(false)
             });
 
-            // Preset Tabs
-            for id in &PRESET_IDS {
-                let btn = Button::with_label(id);
-                btn.style_context().add_class("tab-btn");
-                if *id == config.layout {
-                    btn.style_context().add_class("active");
-                }
-                btn.set_can_focus(false);
+            // Unified Layout Selector (Single button / dropdown)
+            let layout_combo = ComboBoxText::new();
+            layout_combo.style_context().add_class("layout-combo");
+            layout_combo.set_can_focus(false);
 
-                let preset_c = preset_rc.clone();
-                let grid_c = grid.clone();
-                let mode_c = current_mode_rc.clone();
-                let config_c = config_rc.clone();
-                let active_c = active_flick_rc.clone();
-                let overlay_c = overlay.clone();
-                let guide_c = DrawingArea::new(); // will be replaced
-                let last_c = last_char_rc.clone();
-                let tabs_c = tab_buttons_rc.clone();
-                let p_id = id.to_string();
+            let display_names = [
+                ("google", "⌨ Google (Gboard 20キー)"),
+                ("iphone", "⌨ iPhone (iOS 19キー)"),
+                ("galaxy", "⌨ Galaxy (Samsung 20キー)"),
+                ("tenkey", "⌨ 10キー (電卓式 20キー)"),
+                ("push_phone", "⌨ プッシュボタン (電話式 12キー)"),
+                ("garakei", "⌨ ガラケー (連打トグル 20キー)"),
+            ];
 
-                #[cfg(target_os = "linux")]
-                let kb_c = keyboard.clone();
+            for (id, label) in &display_names {
+                layout_combo.append(Some(id), label);
+            }
 
-                btn.connect_clicked(move |_| {
-                    if let Ok(new_preset) = load_preset(&p_id, None) {
-                        *preset_c.borrow_mut() = new_preset;
-                        config_c.borrow_mut().layout = p_id.clone();
-                        // Update active tab style
-                        for (tid, tbtn) in tabs_c.borrow().iter() {
-                            if tid == &p_id {
-                                tbtn.style_context().add_class("active");
-                            } else {
-                                tbtn.style_context().remove_class("active");
+            // Scan user custom keymaps
+            let custom_dirs = [
+                std::path::PathBuf::from("configs/keymaps/custom"),
+                glib::home_dir().join(".config/flktux/custom"),
+            ];
+            for cdir in &custom_dirs {
+                if let Ok(entries) = std::fs::read_dir(cdir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                                layout_combo.append(Some(stem), &format!("★ {stem} (カスタム)"));
                             }
                         }
+                    }
+                }
+            }
+
+            layout_combo.set_active_id(Some(&config.layout));
+
+            let preset_c = preset_rc.clone();
+            let grid_c = grid.clone();
+            let mode_c = current_mode_rc.clone();
+            let config_c = config_rc.clone();
+            let active_c = active_flick_rc.clone();
+            let overlay_c = overlay.clone();
+            let guide_c = DrawingArea::new();
+            let last_c = last_char_rc.clone();
+
+            #[cfg(target_os = "linux")]
+            let kb_c = keyboard.clone();
+
+            layout_combo.connect_changed(move |combo| {
+                if let Some(lid) = combo.active_id() {
+                    let p_str = lid.as_str();
+                    let custom_dirs = [
+                        std::path::PathBuf::from("configs/keymaps/custom"),
+                        glib::home_dir().join(".config/flktux/custom"),
+                    ];
+                    let mut found_preset = None;
+                    for cdir in &custom_dirs {
+                        if cdir.is_dir() {
+                            if let Ok(p) = load_preset(p_str, Some(cdir)) {
+                                found_preset = Some(p);
+                                break;
+                            }
+                        }
+                    }
+                    if found_preset.is_none() {
+                        found_preset = load_preset(p_str, None).ok();
+                    }
+
+                    if let Some(new_preset) = found_preset {
+                        *preset_c.borrow_mut() = new_preset;
+                        config_c.borrow_mut().layout = p_str.to_string();
                         Self::rebuild_keys_internal(
                             &grid_c,
                             &preset_c,
@@ -244,10 +296,10 @@ pub mod native_gtk {
                             &kb_c,
                         );
                     }
-                });
-                tab_buttons_rc.borrow_mut().push((id.to_string(), btn.clone()));
-                header.pack_start(&btn, false, false, 1);
-            }
+                }
+            });
+
+            header.pack_start(&layout_combo, false, false, 2);
 
             // Close button
             let close_btn = Button::with_label("✕");

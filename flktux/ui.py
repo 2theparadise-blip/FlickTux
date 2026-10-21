@@ -9,6 +9,10 @@ and physical 10-key hardware integration.
 
 import os
 import sys
+PKG_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PKG_ROOT not in sys.path:
+    sys.path.insert(0, PKG_ROOT)
+
 import json
 import math
 import subprocess
@@ -17,17 +21,30 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 from gi.repository import Gtk, Gdk, GLib, Pango, cairo
 
-from .xdo import XDO
-from .layouts import (
-    get_layout,
-    KANA_FLICKS,
-    KATAKANA_FLICKS,
-    ALPHA_FLICKS,
-    NUMBER_FLICKS,
-    TOGGLE_CYCLES,
-    DAKUTEN_MAP,
-)
-from .numpad_listener import NumpadListener
+try:
+    from .xdo import XDO
+    from .layouts import (
+        get_layout,
+        KANA_FLICKS,
+        KATAKANA_FLICKS,
+        ALPHA_FLICKS,
+        NUMBER_FLICKS,
+        TOGGLE_CYCLES,
+        DAKUTEN_MAP,
+    )
+    from .numpad_listener import NumpadListener
+except (ImportError, ValueError):
+    from flktux.xdo import XDO
+    from flktux.layouts import (
+        get_layout,
+        KANA_FLICKS,
+        KATAKANA_FLICKS,
+        ALPHA_FLICKS,
+        NUMBER_FLICKS,
+        TOGGLE_CYCLES,
+        DAKUTEN_MAP,
+    )
+    from flktux.numpad_listener import NumpadListener
 
 try:
     from Xlib import X, display as xdisplay
@@ -268,6 +285,8 @@ class FlickTuxWindow(Gtk.Window):
         self.input_mode = "kana"  # 'kana' | 'katakana' | 'alpha' | 'number' | 'nav'
         self.toggle_timeout_ms = DEFAULT_TOGGLE_TIMEOUT_MS
         self.saved_pos = None
+        self.numpad_dev_path = None
+        self.numpad_exclusive = False
         self.load_saved_config()
 
         self.last_char = ""
@@ -289,7 +308,11 @@ class FlickTuxWindow(Gtk.Window):
         self.toggle_timer_id = None
 
         # Numpad listener
-        self.numpad_listener = NumpadListener(self.on_numpad_event)
+        self.numpad_listener = NumpadListener(
+            self.on_numpad_event,
+            device_path=self.numpad_dev_path,
+            exclusive_grab=self.numpad_exclusive
+        )
 
         # Outer Edge Frame for 1-finger / 2-finger drag movement
         self.edge_frame = Gtk.EventBox()
@@ -535,6 +558,9 @@ class FlickTuxWindow(Gtk.Window):
                     self.current_layout_name = data.get("layout", "Google")
                     self.input_mode = data.get("mode", "kana")
                     self.toggle_timeout_ms = int(data.get("toggle_timeout_ms", DEFAULT_TOGGLE_TIMEOUT_MS))
+                    np_cfg = data.get("numpad_device", {})
+                    self.numpad_dev_path = np_cfg.get("device_path")
+                    self.numpad_exclusive = np_cfg.get("exclusive_grab", False)
                     if "window_x" in data and "window_y" in data:
                         self.saved_pos = (int(data["window_x"]), int(data["window_y"]))
                     return

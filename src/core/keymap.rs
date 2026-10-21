@@ -118,7 +118,7 @@ pub struct Common {
     pub dakuten_map: HashMap<String, String>,
 }
 
-pub const PRESET_IDS: [&str; 5] = ["google", "galaxy", "iphone", "garakei", "tenkey"];
+pub const PRESET_IDS: [&str; 6] = ["google", "galaxy", "iphone", "garakei", "tenkey", "push_phone"];
 pub const MODES: [&str; 5] = ["kana", "katakana", "alpha", "number", "nav"];
 
 fn embedded(id: &str) -> Option<&'static str> {
@@ -128,6 +128,7 @@ fn embedded(id: &str) -> Option<&'static str> {
         "iphone" => include_str!("../../configs/keymaps/presets/iphone.json"),
         "garakei" => include_str!("../../configs/keymaps/presets/garakei.json"),
         "tenkey" => include_str!("../../configs/keymaps/presets/tenkey.json"),
+        "push_phone" => include_str!("../../configs/keymaps/presets/push_phone.json"),
         _ => return None,
     })
 }

@@ -19,6 +19,7 @@ PRESETS = [
     ("iphone", "iPhone", "iPhone"),
     ("garakei", "ガラケー", "ガラケー"),
     ("tenkey", "10キー", "10キー"),
+    ("push_phone", "プッシュボタン", "プッシュボタン"),
 ]
 MODES = ["kana", "katakana", "alpha", "number", "nav"]
 

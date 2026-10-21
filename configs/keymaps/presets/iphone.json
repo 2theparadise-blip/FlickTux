@@ -8,8 +8,8 @@
    [
     {
      "type": "action",
-     "label": "あ",
-     "action": "mode",
+     "label": "☆123",
+     "action": "number",
      "style": "action-cell"
     },
     {
@@ -55,8 +55,8 @@
    [
     {
      "type": "action",
-     "label": "1 2 3",
-     "action": "number",
+     "label": "ABC",
+     "action": "alpha",
      "style": "action-cell"
     },
     {
@@ -102,8 +102,8 @@
    [
     {
      "type": "action",
-     "label": "◀",
-     "action": "left",
+     "label": "小 ゛゜",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {
@@ -141,22 +141,23 @@
     },
     {
      "type": "action",
-     "label": "▶",
-     "action": "right",
-     "style": "action-cell"
+     "label": "改行",
+     "action": "enter",
+     "style": "enter-cell",
+     "rowSpan": 2
     }
    ],
    [
     {
      "type": "action",
-     "label": "記号",
-     "action": "symbol",
+     "label": "🌐",
+     "action": "mode",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "゛゜小",
-     "action": "dakuten",
+     "label": "マイク",
+     "action": "space",
      "style": "action-cell"
     },
     {
@@ -183,7 +184,7 @@
     },
     {
      "type": "action",
-     "label": "確定",
+     "label": "改行",
      "action": "enter",
      "style": "enter-cell"
     }
@@ -193,8 +194,8 @@
    [
     {
      "type": "action",
-     "label": "ア",
-     "action": "mode",
+     "label": "☆123",
+     "action": "number",
      "style": "action-cell"
     },
     {
@@ -240,8 +241,8 @@
    [
     {
      "type": "action",
-     "label": "1 2 3",
-     "action": "number",
+     "label": "ABC",
+     "action": "alpha",
      "style": "action-cell"
     },
     {
@@ -287,8 +288,8 @@
    [
     {
      "type": "action",
-     "label": "◀",
-     "action": "left",
+     "label": "゛゜小",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {
@@ -326,22 +327,23 @@
     },
     {
      "type": "action",
-     "label": "▶",
-     "action": "right",
-     "style": "action-cell"
+     "label": "改行",
+     "action": "enter",
+     "style": "enter-cell",
+     "rowSpan": 2
     }
    ],
    [
     {
      "type": "action",
-     "label": "記号",
-     "action": "symbol",
+     "label": "🌐",
+     "action": "mode",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "゛゜小",
-     "action": "dakuten",
+     "label": "マイク",
+     "action": "space",
      "style": "action-cell"
     },
     {
@@ -368,7 +370,7 @@
     },
     {
      "type": "action",
-     "label": "確定",
+     "label": "改行",
      "action": "enter",
      "style": "enter-cell"
     }
@@ -378,8 +380,8 @@
    [
     {
      "type": "action",
-     "label": "A",
-     "action": "mode",
+     "label": "☆123",
+     "action": "number",
      "style": "action-cell"
     },
     {
@@ -423,8 +425,8 @@
    [
     {
      "type": "action",
-     "label": "1 2 3",
-     "action": "number",
+     "label": "ABC",
+     "action": "alpha",
      "style": "action-cell"
     },
     {
@@ -467,8 +469,8 @@
    [
     {
      "type": "action",
-     "label": "◀",
-     "action": "left",
+     "label": "a/A",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {
@@ -505,22 +507,23 @@
     },
     {
      "type": "action",
-     "label": "▶",
-     "action": "right",
-     "style": "action-cell"
+     "label": "改行",
+     "action": "enter",
+     "style": "enter-cell",
+     "rowSpan": 2
     }
    ],
    [
     {
      "type": "action",
-     "label": "記号",
-     "action": "symbol",
+     "label": "🌐",
+     "action": "mode",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "a/A",
-     "action": "dakuten",
+     "label": "マイク",
+     "action": "space",
      "style": "action-cell"
     },
     {
@@ -547,7 +550,7 @@
     },
     {
      "type": "action",
-     "label": "確定",
+     "label": "改行",
      "action": "enter",
      "style": "enter-cell"
     }
@@ -557,8 +560,8 @@
    [
     {
      "type": "action",
-     "label": "1",
-     "action": "mode",
+     "label": "☆123",
+     "action": "number",
      "style": "action-cell"
     },
     {
@@ -602,8 +605,8 @@
    [
     {
      "type": "action",
-     "label": "1 2 3",
-     "action": "number",
+     "label": "ABC",
+     "action": "alpha",
      "style": "action-cell"
     },
     {
@@ -646,8 +649,8 @@
    [
     {
      "type": "action",
-     "label": "◀",
-     "action": "left",
+     "label": "+/-",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {
@@ -684,22 +687,23 @@
     },
     {
      "type": "action",
-     "label": "▶",
-     "action": "right",
-     "style": "action-cell"
+     "label": "改行",
+     "action": "enter",
+     "style": "enter-cell",
+     "rowSpan": 2
     }
    ],
    [
     {
      "type": "action",
-     "label": "記号",
-     "action": "symbol",
+     "label": "🌐",
+     "action": "mode",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "+/-",
-     "action": "dakuten",
+     "label": "マイク",
+     "action": "space",
      "style": "action-cell"
     },
     {
@@ -720,7 +724,7 @@
     },
     {
      "type": "action",
-     "label": "確定",
+     "label": "改行",
      "action": "enter",
      "style": "enter-cell"
     }
@@ -730,8 +734,8 @@
    [
     {
      "type": "action",
-     "label": "Esc",
-     "action": "esc",
+     "label": "☆123",
+     "action": "number",
      "style": "action-cell"
     },
     {
@@ -762,8 +766,8 @@
    [
     {
      "type": "action",
-     "label": "Tab",
-     "action": "tab",
+     "label": "ABC",
+     "action": "alpha",
      "style": "action-cell"
     },
     {
@@ -786,8 +790,8 @@
     },
     {
      "type": "action",
-     "label": "PgUp",
-     "action": "page_up",
+     "label": "Space",
+     "action": "space",
      "style": "action-cell"
     }
    ],
@@ -812,22 +816,23 @@
     },
     {
      "type": "action",
-     "label": "S-Tab",
-     "action": "shift_tab",
+     "label": "Tab",
+     "action": "tab",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "PgDn",
-     "action": "page_down",
-     "style": "action-cell"
+     "label": "確定",
+     "action": "enter",
+     "style": "enter-cell",
+     "rowSpan": 2
     }
    ],
    [
     {
      "type": "action",
-     "label": "Space",
-     "action": "space",
+     "label": "🌐",
+     "action": "mode",
      "style": "action-cell"
     },
     {
@@ -838,14 +843,14 @@
     },
     {
      "type": "action",
-     "label": "変換",
-     "action": "convert",
+     "label": "S-Tab",
+     "action": "shift_tab",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "↑",
-     "action": "mode",
+     "label": "Esc",
+     "action": "esc",
      "style": "action-cell"
     },
     {

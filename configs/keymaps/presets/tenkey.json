@@ -178,8 +178,15 @@
      }
     },
     {
+     "type": "action",
+     "label": "あ",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
      "type": "flick",
-     "key": "、。",
+     "key": ".",
      "num": ".",
      "flick_data": {
       "center": "、",
@@ -188,13 +195,6 @@
       "right": "！",
       "down": "…"
      }
-    },
-    {
-     "type": "action",
-     "label": "あ",
-     "num": "切替",
-     "action": "mode",
-     "style": "action-cell"
     },
     {
      "type": "action",
@@ -385,8 +385,15 @@
      }
     },
     {
+     "type": "action",
+     "label": "ア",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
      "type": "flick",
-     "key": "、。",
+     "key": ".",
      "num": ".",
      "flick_data": {
       "center": "、",
@@ -395,13 +402,6 @@
       "right": "！",
       "down": "…"
      }
-    },
-    {
-     "type": "action",
-     "label": "ア",
-     "num": "切替",
-     "action": "mode",
-     "style": "action-cell"
     },
     {
      "type": "action",
@@ -586,8 +586,15 @@
      }
     },
     {
+     "type": "action",
+     "label": "A",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
      "type": "flick",
-     "key": ".,?!",
+     "key": ".",
      "num": ".",
      "flick_data": {
       "center": ".",
@@ -596,13 +603,6 @@
       "right": "!",
       "down": "-"
      }
-    },
-    {
-     "type": "action",
-     "label": "A",
-     "num": "切替",
-     "action": "mode",
-     "style": "action-cell"
     },
     {
      "type": "action",
@@ -787,17 +787,17 @@
      }
     },
     {
-     "type": "flick",
-     "key": ".",
-     "num": ".",
-     "flick_data": null
-    },
-    {
      "type": "action",
      "label": "1",
      "num": "切替",
      "action": "mode",
      "style": "action-cell"
+    },
+    {
+     "type": "flick",
+     "key": ".",
+     "num": ".",
+     "flick_data": null
     },
     {
      "type": "action",

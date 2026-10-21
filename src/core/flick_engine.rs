@@ -476,9 +476,8 @@ mod tests {
         assert_eq!(e.mode(), "number");
         tap(&mut e, MODE, 40);
         assert_eq!(e.mode(), "nav");
-        // in nav mode, the mode cycle button is at row 3, col 3 (x=420, y=420)
-        let nav_mode_btn = (420.0, 420.0);
-        tap(&mut e, nav_mode_btn, 50);
+        // in nav mode, the mode cycle button is at row 0, col 0 (MODE)
+        tap(&mut e, MODE, 50);
         assert_eq!(e.mode(), "kana");
     }
 

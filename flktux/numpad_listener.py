@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-flktux.numpad_listener: Physical 10-key (NumPad) hardware integration
-Listens for PC numpad / external Bluetooth/USB numpad keys and maps to
-FlickTux 10-key toggle input based on current mode (Kana, Katakana, Alpha, Numbers).
+flktux.numpad_listener: Physical 10-key (NumPad) & DIY / Arduino device integration.
+Supports:
+1. Specific device binding (e.g. /dev/input/by-id/usb-Arduino...) with EVIOCGRAB
+   so DIY keypads / push-phones do not leak keystrokes into other desktop applications.
+2. Global X11 grab fallback for standard PC/Bluetooth numpads.
 """
 
+import os
 import sys
 import threading
+import select
+import struct
 from typing import Callable, Optional
 from gi.repository import GLib
 
@@ -39,35 +44,84 @@ NUMPAD_GRID_MAP = {
     "BackSpace":   (0, 3),
 }
 
+# Linux evdev keycode mapping to grid position (row, col)
+EVDEV_CODE_MAP = {
+    98: (0, 0),   # KEY_KPSLASH (/)
+    71: (1, 0),   # KEY_KP7 (7)
+    72: (1, 1),   # KEY_KP8 (8)
+    73: (1, 2),   # KEY_KP9 (9)
+    74: (1, 3),   # KEY_KPMINUS (-)
+
+    75: (2, 0),   # KEY_KP4 (4)
+    76: (2, 1),   # KEY_KP5 (5)
+    77: (2, 2),   # KEY_KP6 (6)
+
+    79: (3, 0),   # KEY_KP1 (1)
+    80: (3, 1),   # KEY_KP2 (2)
+    81: (3, 2),   # KEY_KP3 (3)
+    78: (3, 3),   # KEY_KPPLUS (+)
+
+    82: (4, 0),   # KEY_KP0 (0)
+    83: (4, 1),   # KEY_KPDOT (.)
+    55: (4, 2),   # KEY_KPASTERISK (*)
+    96: (4, 3),   # KEY_KPENTER (Enter)
+    28: (4, 3),   # KEY_ENTER
+
+    14: (0, 3),   # KEY_BACKSPACE
+    111: (0, 3),  # KEY_DELETE
+}
+
 
 class NumpadListener:
-    """X11 バックグラウンドリスナー: 物理テンキーの入力を検知し、
+    """物理テンキー / 自作 Arduino テンキーの入力を検知し、
     フォーカスに関わらず FlickTux のガラケー打ちトグルを実行"""
 
-    def __init__(self, callback: Callable[[int, int], None]):
+    def __init__(self, callback: Callable[[int, int], None], device_path: Optional[str] = None, exclusive_grab: bool = False):
         self.callback = callback
+        self.device_path = device_path
+        self.exclusive_grab = exclusive_grab
         self.running = False
         self.thread: Optional[threading.Thread] = None
         self.d = None
         self.root = None
         self.grabbed_keycodes = {}
+        self.evdev_fd: Optional[int] = None
 
     def start(self):
+        if self.running:
+            return
+        self.running = True
+
+        # Check if direct device path is specified and accessible
+        if self.device_path and os.path.exists(self.device_path):
+            self.thread = threading.Thread(target=self._run_evdev, daemon=True)
+            self.thread.start()
+            return
+
+        # Fallback to X11 grab
         try:
             from Xlib import X, display, XK
             self.X = X
             self.display = display
             self.XK = XK
+            self.thread = threading.Thread(target=self._run_x11, daemon=True)
+            self.thread.start()
         except ImportError:
             print("[flktux.numpad] python3-xlib not installed; physical numpad listener disabled.", file=sys.stderr)
-            return
-
-        self.running = True
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        self.thread.start()
 
     def stop(self):
         self.running = False
+        if self.evdev_fd is not None:
+            try:
+                if self.exclusive_grab:
+                    import fcntl
+                    # EVIOCGRAB = 0x40044590 (release grab: arg 0)
+                    fcntl.ioctl(self.evdev_fd, 0x40044590, 0)
+                os.close(self.evdev_fd)
+            except Exception:
+                pass
+            self.evdev_fd = None
+
         if self.d and self.root:
             try:
                 for kc in self.grabbed_keycodes.values():
@@ -76,12 +130,47 @@ class NumpadListener:
             except Exception:
                 pass
 
-    def _run(self):
+    def _run_evdev(self):
+        """Direct evdev reader for specific DIY device (with optional EVIOCGRAB)"""
+        try:
+            real_path = os.path.realpath(self.device_path)
+            self.evdev_fd = os.open(real_path, os.O_RDONLY | os.O_NONBLOCK)
+
+            if self.exclusive_grab:
+                try:
+                    import fcntl
+                    # EVIOCGRAB = 0x40044590 (exclusive grab: arg 1)
+                    fcntl.ioctl(self.evdev_fd, 0x40044590, 1)
+                    print(f"[flktux.numpad] Exclusive grab enabled on {real_path}")
+                except Exception as e:
+                    print(f"[flktux.numpad] Warning: Could not enable EVIOCGRAB: {e}", file=sys.stderr)
+
+            # Linux input_event structure
+            EVENT_FORMAT = "llHHI"
+            EVENT_SIZE = struct.calcsize(EVENT_FORMAT)
+
+            while self.running and self.evdev_fd is not None:
+                r, _, _ = select.select([self.evdev_fd], [], [], 0.3)
+                if self.evdev_fd in r:
+                    data = os.read(self.evdev_fd, EVENT_SIZE * 16)
+                    for i in range(0, len(data), EVENT_SIZE):
+                        chunk = data[i:i + EVENT_SIZE]
+                        if len(chunk) == EVENT_SIZE:
+                            _, _, ev_type, ev_code, ev_val = struct.unpack(EVENT_FORMAT, chunk)
+                            if ev_type == 1 and ev_val == 1:  # EV_KEY Press
+                                if ev_code in EVDEV_CODE_MAP:
+                                    r_pos, c_pos = EVDEV_CODE_MAP[ev_code]
+                                    GLib.idle_add(self.callback, r_pos, c_pos)
+        except Exception as e:
+            if self.running:
+                print(f"[flktux.numpad] Evdev listener error: {e}", file=sys.stderr)
+
+    def _run_x11(self):
+        """X11 Grab fallback for generic desktop keyboards"""
         try:
             self.d = self.display.Display()
             self.root = self.d.screen().root
 
-            # Grab numpad keys
             for key_name in NUMPAD_GRID_MAP.keys():
                 ks = self.XK.string_to_keysym(key_name)
                 if ks:
@@ -95,10 +184,8 @@ class NumpadListener:
                             self.X.GrabModeAsync,
                             self.X.GrabModeAsync
                         )
-
             self.d.sync()
 
-            # Event loop
             while self.running:
                 event = self.d.next_event()
                 if event.type == self.X.KeyPress:
@@ -109,4 +196,4 @@ class NumpadListener:
                             break
         except Exception as e:
             if self.running:
-                print(f"[flktux.numpad] Listener stopped: {e}", file=sys.stderr)
+                print(f"[flktux.numpad] X11 listener stopped: {e}", file=sys.stderr)

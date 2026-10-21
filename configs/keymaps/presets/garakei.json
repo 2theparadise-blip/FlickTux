@@ -778,8 +778,8 @@
    [
     {
      "type": "action",
-     "label": "Esc",
-     "action": "esc",
+     "label": "↑",
+     "action": "mode",
      "style": "action-cell"
     },
     {
@@ -810,14 +810,14 @@
    [
     {
      "type": "action",
-     "label": "Tab",
-     "action": "tab",
+     "label": "◀ 左",
+     "action": "left",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "◀ 左",
-     "action": "left",
+     "label": "Tab",
+     "action": "tab",
      "style": "action-cell"
     },
     {
@@ -828,22 +828,22 @@
     },
     {
      "type": "action",
-     "label": "▶ 右",
-     "action": "right",
+     "label": "S-Tab",
+     "action": "shift_tab",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "PgUp",
-     "action": "page_up",
+     "label": "Space",
+     "action": "space",
      "style": "action-cell"
     }
    ],
    [
     {
      "type": "action",
-     "label": "Shift",
-     "action": "shift",
+     "label": "▶ 右",
+     "action": "right",
      "style": "action-cell"
     },
     {
@@ -860,22 +860,22 @@
     },
     {
      "type": "action",
-     "label": "S-Tab",
-     "action": "shift_tab",
+     "label": "Shift",
+     "action": "shift",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "PgDn",
-     "action": "page_down",
+     "label": "変換",
+     "action": "convert",
      "style": "action-cell"
     }
    ],
    [
     {
      "type": "action",
-     "label": "Space",
-     "action": "space",
+     "label": "記号",
+     "action": "symbol",
      "style": "action-cell"
     },
     {
@@ -886,14 +886,14 @@
     },
     {
      "type": "action",
-     "label": "変換",
-     "action": "convert",
+     "label": "Esc",
+     "action": "esc",
      "style": "action-cell"
     },
     {
      "type": "action",
-     "label": "↑",
-     "action": "mode",
+     "label": "次へ",
+     "action": "next",
      "style": "action-cell"
     },
     {
