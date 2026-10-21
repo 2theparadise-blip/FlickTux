@@ -336,3 +336,13 @@
 - [ ] ドロップダウンから「ガラケー (連打トグル 20キー)」を選択し、トグル入力配列が表示されること
 - [ ] ユーザーオリジナルキーマップ（`configs/keymaps/custom/`）がドロップダウンに表示され、選択できること
 - [ ] Webエディタで「行追加」「列追加」を実行してキー数を増やせること
+
+---
+
+## 8. ハードウェア拡張：他社製液タブ・自作10キー・Weylus(iPad)連携
+
+本計画書のキー配列およびUI刷新と並行して策定された、包括的なマルチデバイス対応仕様書（[MULTI_DEVICE_SUPPORT_PLAN.md](file:///Users/kogetu2019/.gemini/antigravity/scratch/working/tools/FlickTux/docs/MULTI_DEVICE_SUPPORT_PLAN.md)）へのリンク：
+1. **他社製液タブ・ペンタブ対応**: XP-Pen, Huion, Gaomon, UGEE, Xencelabs などの evdev 能力ベース検出およびソフトウェア筆圧カーブ補正
+2. **自作10キー・プッシュフォンデバイス検索**: Arduino, RP2040, Teensy, QMK 等の自動スキャンおよび排他キャプチャ (`EVIOCGRAB`)
+3. **Weylus による iPad / iPad mini 液タブ化**: 仮想 uinput (`Weylus Stylus`) 自動認識、Apple Pencil 最適化、4:3 アスペクト比補正、パームリジェクション
+
