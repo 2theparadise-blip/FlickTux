@@ -268,10 +268,16 @@ class FlickTuxWindow(Gtk.Window):
         self.set_app_paintable(True)
         self.set_support_multidevice(True)  # CRITICAL: Stylus pen & Multitouch support
 
-        # Window icon
+        # Window icon (theme name first, then file fallbacks)
+        try:
+            self.set_icon_name("flicktux")
+        except Exception:
+            pass
         for icon_path in [
-            "/opt/flicktux/assets/icon.png",
             "/usr/share/pixmaps/flicktux.png",
+            "/opt/flicktux/assets/icon.png",
+            "/opt/flicktux/assets/flicktux.png",
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "flicktux.png"),
             os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "icon.png"),
         ]:
             if os.path.exists(icon_path):

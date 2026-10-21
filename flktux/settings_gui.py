@@ -161,6 +161,10 @@ class SettingsDialog(Gtk.Window):
         self.set_default_size(620, 680)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(10)
+        try:
+            self.set_icon_name("flicktux")
+        except Exception:
+            pass
 
         # Load configurations
         self.cfg = TABLET.load_settings()
