@@ -1,0 +1,37 @@
+[package]
+name = "flktux"
+version = "0.1.0"
+edition = "2021"
+description = "FlickTux: floating flick keyboard for pen tablets (Rust port)"
+license = "MIT"
+
+[lib]
+name = "flktux"
+path = "src/lib.rs"
+
+[[bin]]
+name = "flktux"
+path = "src/main.rs"
+
+[features]
+default = []
+gui = ["dep:gtk", "dep:gdk", "dep:cairo-rs"]
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+gtk = { version = "0.18", optional = true }
+gdk = { version = "0.18", optional = true }
+cairo-rs = { version = "0.18", optional = true }
+tiny_http = "0.12"
+libc = "0.2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+evdev = "0.13"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+panic = "abort"

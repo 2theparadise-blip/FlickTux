@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlickTux Web Matrix Editor (ver. 0.09)</title>
+  <style>
+    :root {
+      --bg-dark: #121316;
+      --card-bg: #1e1f23;
+      --border-color: #383a40;
+      --primary: #8ab4f8;
+      --primary-hover: #aecbfa;
+      --text: #e8eaed;
+      --text-muted: #9aa0a6;
+      --key-bg: #2d2f34;
+      --key-hover: #3c3f46;
+      --action-bg: #3c4043;
+      --enter-bg: #8ab4f8;
+      --enter-text: #121316;
+      --danger: #f28b82;
+      --success: #81c995;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.15rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .logo-badge {
+      font-size: 0.75rem;
+      background: rgba(138, 180, 248, 0.15);
+      border: 1px solid var(--primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button, select {
+      background-color: var(--key-bg);
+      color: var(--text);
+      border: 1px solid var(--border-color);
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover, select:hover {
+      background-color: var(--key-hover);
+      border-color: var(--primary);
+    }
+    button.btn-primary {
+      background-color: var(--primary);
+      color: #121316;
+      font-weight: bold;
+      border: none;
+    }
+    button.btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    button.btn-danger {
+      color: var(--danger);
+      border-color: rgba(242, 139, 130, 0.4);
+    }
+    button.btn-danger:hover {
+      background-color: rgba(242, 139, 130, 0.15);
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      overflow: hidden;
+    }
+    @media (max-width: 860px) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+        overflow-y: auto;
+      }
+    }
+    .preview-panel {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #1a1c21 0%, #121316 100%);
+      overflow: auto;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      background: var(--card-bg);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    .tab-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+    }
+    .tab-btn.active {
+      background-color: #383a40;
+      color: var(--primary);
+      font-weight: bold;
+    }
+    .keyboard-preview {
+      background: rgba(30, 31, 35, 0.95);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+      display: grid;
+      gap: 6px;
+      max-width: 500px;
+      width: 100%;
+    }
+    .key-cell {
+      background-color: var(--key-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      min-height: 58px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .key-cell:hover {
+      background-color: var(--key-hover);
+      border-color: var(--primary);
+    }
+    .key-cell.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary);
+      background-color: rgba(138, 180, 248, 0.12);
+    }
+    .key-cell.action-cell {
+      background-color: var(--action-bg);
+      font-size: 0.85rem;
+    }
+    .key-cell.enter-cell {
+      background-color: var(--enter-bg);
+      color: var(--enter-text);
+      font-weight: bold;
+    }
+    .key-center {
+      font-size: 1.15rem;
+      font-weight: bold;
+    }
+    .key-num {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: 0.65rem;
+      color: var(--primary);
+    }
+    .key-petals {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .petal {
+      position: absolute;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+    .petal.up { top: 2px; left: 50%; transform: translateX(-50%); }
+    .petal.down { bottom: 2px; left: 50%; transform: translateX(-50%); }
+    .petal.left { left: 4px; top: 50%; transform: translateY(-50%); }
+    .petal.right { right: 4px; top: 50%; transform: translateY(-50%); }
+
+    .editor-panel {
+      background-color: var(--card-bg);
+      border-left: 1px solid var(--border-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .editor-panel h3 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    input[type="text"], input[type="number"] {
+      background-color: #121316;
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .flick-matrix-input {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      max-width: 240px;
+      margin: 8px auto;
+    }
+    .flick-matrix-input input {
+      text-align: center;
+      padding: 8px 2px;
+      font-weight: bold;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--primary);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      color: var(--text);
+      font-size: 0.9rem;
+      display: none;
+      z-index: 1000;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span>🐧 FlickTux</span>
+      <span class="logo-badge">Web Matrix Editor v0.09</span>
+    </div>
+    <div class="controls">
+      <select id="presetSelect">
+        <option value="google">Google</option>
+        <option value="galaxy">Galaxy</option>
+        <option value="iphone">iPhone (19キー結合)</option>
+        <option value="garakei">ガラケー</option>
+        <option value="tenkey">10キー</option>
+      </select>
+      <button id="btnReload" title="実機から再読み込み">🔄 再読込</button>
+      <button id="btnReset" class="btn-danger" title="初期値に戻す">初期化</button>
+      <button id="btnSave" class="btn-primary">💾 設定を保存＆実機適用</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="preview-panel">
+      <div class="tab-bar" id="modeTabBar">
+        <button class="tab-btn active" data-mode="kana">かな</button>
+        <button class="tab-btn" data-mode="katakana">カナ</button>
+        <button class="tab-btn" data-mode="alpha">英字</button>
+        <button class="tab-btn" data-mode="number">数字</button>
+        <button class="tab-btn" data-mode="nav">ナビ</button>
+      </div>
+      <div class="keyboard-preview" id="keyboardPreview"></div>
+    </div>
+
+    <div class="editor-panel">
+      <h3>キープロパティ編集</h3>
+      <div id="noSelection" style="color: var(--text-muted); font-size: 0.85rem; padding: 20px 0;">
+        左のキーボードからキーをクリックして選択してください。
+      </div>
+
+      <div id="cellEditor" style="display: none; display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>セルタイプ</label>
+            <select id="cellType">
+              <option value="flick">フリックキー</option>
+              <option value="action">機能・アクション</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>キーID / 表示</label>
+            <input type="text" id="cellKey" placeholder="あ, か, enter...">
+          </div>
+        </div>
+
+        <div id="flickSettings">
+          <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">フリック文字マトリックス</label>
+          <div class="flick-matrix-input">
+            <div></div>
+            <input type="text" id="flickUp" placeholder="上" maxlength="4">
+            <div></div>
+            <input type="text" id="flickLeft" placeholder="左" maxlength="4">
+            <input type="text" id="flickCenter" placeholder="中央" maxlength="4">
+            <input type="text" id="flickRight" placeholder="右" maxlength="4">
+            <div></div>
+            <input type="text" id="flickDown" placeholder="下" maxlength="4">
+            <div></div>
+          </div>
+          <div class="form-group" style="margin-top: 6px;">
+            <label>右上サブ文字 (数字等)</label>
+            <input type="text" id="cellNum" placeholder="1, 2, #...">
+          </div>
+        </div>
+
+        <div id="actionSettings" style="display: none;">
+          <div class="form-group">
+            <label>アクション種別</label>
+            <select id="actionType">
+              <option value="enter">確定 (Enter)</option>
+              <option value="backspace">一文字削除 (BS)</option>
+              <option value="space">空白 (Space)</option>
+              <option value="mode">モード切替 (かな/カナ/英/数)</option>
+              <option value="number">数字モードトグル</option>
+              <option value="symbol">記号/ナビトグル</option>
+              <option value="dakuten">゛゜小 (濁点・小文字)</option>
+              <option value="left">カーソル ◀ 左</option>
+              <option value="right">カーソル ▶ 右</option>
+              <option value="up">カーソル ▲ 上</option>
+              <option value="down">カーソル ▼ 下</option>
+              <option value="tab">Tab</option>
+              <option value="esc">Esc</option>
+              <option value="delete">Delete</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>スタイルクラス</label>
+            <select id="actionStyle">
+              <option value="action-cell">標準アクション (ダーク)</option>
+              <option value="enter-cell">確定キー (ハイライトブルー)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>行結合 (rowSpan)</label>
+            <input type="number" id="rowSpan" min="1" max="4" value="1">
+          </div>
+          <div class="form-group">
+            <label>列結合 (colSpan)</label>
+            <input type="number" id="colSpan" min="1" max="5" value="1">
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let currentPresetId = 'google';
+    let currentMode = 'kana';
+    let currentData = null;
+    let selectedCellCoord = null;
+
+    async function loadPresets() {
+      try {
+        const res = await fetch('/api/presets');
+        if (res.ok) {
+          const list = await res.json();
+          const select = document.getElementById('presetSelect');
+          select.innerHTML = '';
+          list.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.rows}×${p.cols})`;
+            if (p.id === currentPresetId) opt.selected = true;
+            select.appendChild(opt);
+          });
+        }
+      } catch (e) {
+        console.error('Failed loading presets list', e);
+      }
+      await loadPresetData(currentPresetId);
+    }
+
+    async function loadPresetData(id) {
+      try {
+        const res = await fetch(`/api/presets/${id}`);
+        if (res.ok) {
+          currentData = await res.json();
+          currentPresetId = id;
+          selectedCellCoord = null;
+          updateEditor();
+          renderKeyboard();
+        }
+      } catch (e) {
+        showToast('プリセット読み込み失敗: ' + e, true);
+      }
+    }
+
+    function renderKeyboard() {
+      const container = document.getElementById('keyboardPreview');
+      if (!currentData || !currentData.modes || !currentData.modes[currentMode]) {
+        container.innerHTML = '<div style="color:var(--text-muted);padding:20px;">データがありません</div>';
+        return;
+      }
+      const grid = currentData.modes[currentMode];
+      const rows = currentData.rows || grid.length;
+      const cols = currentData.cols || (grid[0] ? grid[0].length : 5);
+
+      container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+      container.innerHTML = '';
+
+      grid.forEach((row, r) => {
+        row.forEach((cell, c) => {
+          const div = document.createElement('div');
+          const isSelected = selectedCellCoord && selectedCellCoord.r === r && selectedCellCoord.c === c;
+          div.className = 'key-cell' + (isSelected ? ' selected' : '');
+          
+          const colSpan = cell.col_span || cell.colSpan || 1;
+          const rowSpan = cell.row_span || cell.rowSpan || 1;
+          div.style.gridColumn = `span ${colSpan}`;
+          div.style.gridRow = `span ${rowSpan}`;
+
+          if (cell.type === 'action') {
+            const cls = cell.style || (cell.action === 'enter' ? 'enter-cell' : 'action-cell');
+            div.classList.add(cls);
+            div.innerHTML = `<div class="key-center">${escapeHtml(cell.label || cell.action)}</div>`;
+          } else {
+            const numHtml = cell.num ? `<span class="key-num">${escapeHtml(cell.num)}</span>` : '';
+            const center = (cell.flick_data && cell.flick_data.center) || cell.key;
+            const up = (cell.flick_data && cell.flick_data.up) || '';
+            const down = (cell.flick_data && cell.flick_data.down) || '';
+            const left = (cell.flick_data && cell.flick_data.left) || '';
+            const right = (cell.flick_data && cell.flick_data.right) || '';
+
+            div.innerHTML = `
+              ${numHtml}
+              <div class="key-center">${escapeHtml(center)}</div>
+              <div class="key-petals">
+                ${up ? `<span class="petal up">${escapeHtml(up)}</span>` : ''}
+                ${down ? `<span class="petal down">${escapeHtml(down)}</span>` : ''}
+                ${left ? `<span class="petal left">${escapeHtml(left)}</span>` : ''}
+                ${right ? `<span class="petal right">${escapeHtml(right)}</span>` : ''}
+              </div>
+            `;
+          }
+
+          div.onclick = () => {
+            selectedCellCoord = { r, c };
+            renderKeyboard();
+            updateEditor();
+          };
+          container.appendChild(div);
+        });
+      });
+    }
+
+    function updateEditor() {
+      const noSel = document.getElementById('noSelection');
+      const editor = document.getElementById('cellEditor');
+      if (!selectedCellCoord || !currentData) {
+        noSel.style.display = 'block';
+        editor.style.display = 'none';
+        return;
+      }
+      noSel.style.display = 'none';
+      editor.style.display = 'flex';
+
+      const { r, c } = selectedCellCoord;
+      const cell = currentData.modes[currentMode][r][c];
+
+      const typeSelect = document.getElementById('cellType');
+      typeSelect.value = cell.type || 'flick';
+      document.getElementById('flickSettings').style.display = cell.type === 'action' ? 'none' : 'block';
+      document.getElementById('actionSettings').style.display = cell.type === 'action' ? 'block' : 'none';
+
+      document.getElementById('rowSpan').value = cell.row_span || cell.rowSpan || 1;
+      document.getElementById('colSpan').value = cell.col_span || cell.colSpan || 1;
+
+      if (cell.type === 'action') {
+        document.getElementById('cellKey').value = cell.label || '';
+        document.getElementById('actionType').value = cell.action || 'enter';
+        document.getElementById('actionStyle').value = cell.style || (cell.action === 'enter' ? 'enter-cell' : 'action-cell');
+      } else {
+        document.getElementById('cellKey').value = cell.key || '';
+        document.getElementById('cellNum').value = cell.num || '';
+        const fd = cell.flick_data || {};
+        document.getElementById('flickCenter').value = fd.center || cell.key || '';
+        document.getElementById('flickUp').value = fd.up || '';
+        document.getElementById('flickDown').value = fd.down || '';
+        document.getElementById('flickLeft').value = fd.left || '';
+        document.getElementById('flickRight').value = fd.right || '';
+      }
+    }
+
+    function applyEditorChanges() {
+      if (!selectedCellCoord || !currentData) return;
+      const { r, c } = selectedCellCoord;
+      const type = document.getElementById('cellType').value;
+      const rowSpan = parseInt(document.getElementById('rowSpan').value, 10) || 1;
+      const colSpan = parseInt(document.getElementById('colSpan').value, 10) || 1;
+
+      if (type === 'action') {
+        currentData.modes[currentMode][r][c] = {
+          type: 'action',
+          label: document.getElementById('cellKey').value,
+          action: document.getElementById('actionType').value,
+          style: document.getElementById('actionStyle').value,
+          row_span: rowSpan,
+          col_span: colSpan
+        };
+      } else {
+        const center = document.getElementById('flickCenter').value;
+        const key = document.getElementById('cellKey').value || center;
+        const num = document.getElementById('cellNum').value || undefined;
+        const flick_data = {
+          center: center || undefined,
+          up: document.getElementById('flickUp').value || undefined,
+          down: document.getElementById('flickDown').value || undefined,
+          left: document.getElementById('flickLeft').value || undefined,
+          right: document.getElementById('flickRight').value || undefined
+        };
+        currentData.modes[currentMode][r][c] = {
+          type: 'flick',
+          key: key,
+          num: num,
+          flick_data: flick_data,
+          row_span: rowSpan,
+          col_span: colSpan
+        };
+      }
+      renderKeyboard();
+    }
+
+    // Bind Form Events
+    ['cellType', 'cellKey', 'cellNum', 'flickCenter', 'flickUp', 'flickDown', 'flickLeft', 'flickRight', 'actionType', 'actionStyle', 'rowSpan', 'colSpan'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', applyEditorChanges);
+      el.addEventListener('change', () => {
+        if (id === 'cellType') {
+          const type = el.value;
+          document.getElementById('flickSettings').style.display = type === 'action' ? 'none' : 'block';
+          document.getElementById('actionSettings').style.display = type === 'action' ? 'block' : 'none';
+        }
+        applyEditorChanges();
+      });
+    });
+
+    // Preset & Mode events
+    document.getElementById('presetSelect').addEventListener('change', (e) => {
+      loadPresetData(e.target.value);
+    });
+
+    document.querySelectorAll('#modeTabBar .tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#modeTabBar .tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMode = btn.dataset.mode;
+        selectedCellCoord = null;
+        updateEditor();
+        renderKeyboard();
+      });
+    });
+
+    // Action buttons
+    document.getElementById('btnReload').onclick = () => loadPresetData(currentPresetId);
+
+    document.getElementById('btnSave').onclick = async () => {
+      if (!currentData) return;
+      try {
+        const res = await fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentData)
+        });
+        if (res.ok) {
+          showToast('✅ キーマップを保存し、実機UIへ即時適用しました！');
+          await fetch('/api/reload', { method: 'POST' });
+        } else {
+          showToast('❌ 保存に失敗しました: ' + (await res.text()), true);
+        }
+      } catch (e) {
+        showToast('❌ 接続エラー: ' + e, true);
+      }
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.borderColor = isError ? 'var(--danger)' : 'var(--success)';
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+
+    window.onload = loadPresets;
+  </script>
+</body>
+</html>

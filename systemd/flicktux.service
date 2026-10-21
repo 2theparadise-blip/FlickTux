@@ -1,0 +1,17 @@
+[Unit]
+Description=FlickTux Floating Virtual Keyboard Service
+Documentation=https://github.com/kogetu/FlickTux
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/flktux run
+Restart=on-failure
+RestartSec=3
+Environment=RUST_LOG=info
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical-session.target

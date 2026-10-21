@@ -1,0 +1,964 @@
+{
+ "id": "tenkey",
+ "name": "10キー",
+ "rows": 5,
+ "cols": 4,
+ "modes": {
+  "kana": [
+   [
+    {
+     "type": "action",
+     "label": "記号",
+     "num": "/",
+     "action": "symbol",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "◀",
+     "num": "←",
+     "action": "left",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "▶",
+     "num": "→",
+     "action": "right",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "⌫",
+     "num": "BS",
+     "action": "backspace",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "あ",
+     "num": "7",
+     "flick_data": {
+      "center": "あ",
+      "left": "い",
+      "up": "う",
+      "right": "え",
+      "down": "お"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "か",
+     "num": "8",
+     "flick_data": {
+      "center": "か",
+      "left": "き",
+      "up": "く",
+      "right": "け",
+      "down": "こ"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "さ",
+     "num": "9",
+     "flick_data": {
+      "center": "さ",
+      "left": "し",
+      "up": "す",
+      "right": "せ",
+      "down": "そ"
+     }
+    },
+    {
+     "type": "action",
+     "label": "空白",
+     "num": "-",
+     "action": "space",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "た",
+     "num": "4",
+     "flick_data": {
+      "center": "た",
+      "left": "ち",
+      "up": "つ",
+      "right": "て",
+      "down": "と"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "な",
+     "num": "5",
+     "flick_data": {
+      "center": "な",
+      "left": "に",
+      "up": "ぬ",
+      "right": "ね",
+      "down": "の"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "は",
+     "num": "6",
+     "flick_data": {
+      "center": "は",
+      "left": "ひ",
+      "up": "ふ",
+      "right": "へ",
+      "down": "ほ"
+     }
+    },
+    {
+     "type": "action",
+     "label": "変換",
+     "num": "変",
+     "action": "convert",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "ま",
+     "num": "1",
+     "flick_data": {
+      "center": "ま",
+      "left": "み",
+      "up": "む",
+      "right": "め",
+      "down": "も"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "や",
+     "num": "2",
+     "flick_data": null
+    },
+    {
+     "type": "flick",
+     "key": "ら",
+     "num": "3",
+     "flick_data": {
+      "center": "ら",
+      "left": "り",
+      "up": "る",
+      "right": "れ",
+      "down": "ろ"
+     }
+    },
+    {
+     "type": "action",
+     "label": "次へ",
+     "num": "+",
+     "action": "next",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "わ",
+     "num": "0",
+     "flick_data": {
+      "center": "わ",
+      "left": "を",
+      "up": "ん",
+      "right": "ー",
+      "down": "〜"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "、。",
+     "num": ".",
+     "flick_data": {
+      "center": "、",
+      "left": "。",
+      "up": "？",
+      "right": "！",
+      "down": "…"
+     }
+    },
+    {
+     "type": "action",
+     "label": "あ",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "確定",
+     "num": "Ent",
+     "action": "enter",
+     "style": "enter-cell"
+    }
+   ]
+  ],
+  "katakana": [
+   [
+    {
+     "type": "action",
+     "label": "記号",
+     "num": "/",
+     "action": "symbol",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "◀",
+     "num": "←",
+     "action": "left",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "▶",
+     "num": "→",
+     "action": "right",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "⌫",
+     "num": "BS",
+     "action": "backspace",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "ア",
+     "num": "7",
+     "flick_data": {
+      "center": "ア",
+      "left": "イ",
+      "up": "ウ",
+      "right": "エ",
+      "down": "オ"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "カ",
+     "num": "8",
+     "flick_data": {
+      "center": "カ",
+      "left": "キ",
+      "up": "ク",
+      "right": "ケ",
+      "down": "コ"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "サ",
+     "num": "9",
+     "flick_data": {
+      "center": "サ",
+      "left": "シ",
+      "up": "ス",
+      "right": "セ",
+      "down": "ソ"
+     }
+    },
+    {
+     "type": "action",
+     "label": "空白",
+     "num": "-",
+     "action": "space",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "タ",
+     "num": "4",
+     "flick_data": {
+      "center": "タ",
+      "left": "チ",
+      "up": "ツ",
+      "right": "テ",
+      "down": "ト"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "ナ",
+     "num": "5",
+     "flick_data": {
+      "center": "ナ",
+      "left": "ニ",
+      "up": "ヌ",
+      "right": "ネ",
+      "down": "ノ"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "ハ",
+     "num": "6",
+     "flick_data": {
+      "center": "ハ",
+      "left": "ヒ",
+      "up": "フ",
+      "right": "ヘ",
+      "down": "ホ"
+     }
+    },
+    {
+     "type": "action",
+     "label": "変換",
+     "num": "変",
+     "action": "convert",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "マ",
+     "num": "1",
+     "flick_data": {
+      "center": "マ",
+      "left": "ミ",
+      "up": "ム",
+      "right": "メ",
+      "down": "モ"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "ヤ",
+     "num": "2",
+     "flick_data": {
+      "center": "ヤ",
+      "left": "（",
+      "up": "ユ",
+      "right": "）",
+      "down": "ヨ"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "ラ",
+     "num": "3",
+     "flick_data": {
+      "center": "ラ",
+      "left": "リ",
+      "up": "ル",
+      "right": "レ",
+      "down": "ロ"
+     }
+    },
+    {
+     "type": "action",
+     "label": "次へ",
+     "num": "+",
+     "action": "next",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "ワ",
+     "num": "0",
+     "flick_data": {
+      "center": "ワ",
+      "left": "ヲ",
+      "up": "ン",
+      "right": "ー",
+      "down": "〜"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "、。",
+     "num": ".",
+     "flick_data": {
+      "center": "、",
+      "left": "。",
+      "up": "？",
+      "right": "！",
+      "down": "…"
+     }
+    },
+    {
+     "type": "action",
+     "label": "ア",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "確定",
+     "num": "Ent",
+     "action": "enter",
+     "style": "enter-cell"
+    }
+   ]
+  ],
+  "alpha": [
+   [
+    {
+     "type": "action",
+     "label": "記号",
+     "num": "/",
+     "action": "symbol",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "◀",
+     "num": "←",
+     "action": "left",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "▶",
+     "num": "→",
+     "action": "right",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "⌫",
+     "num": "BS",
+     "action": "backspace",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "abc",
+     "num": "7",
+     "flick_data": {
+      "center": "a",
+      "left": "b",
+      "up": "c",
+      "right": "2"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "def",
+     "num": "8",
+     "flick_data": {
+      "center": "d",
+      "left": "e",
+      "up": "f",
+      "right": "3"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "ghi",
+     "num": "9",
+     "flick_data": {
+      "center": "g",
+      "left": "h",
+      "up": "i",
+      "right": "4"
+     }
+    },
+    {
+     "type": "action",
+     "label": "空白",
+     "num": "-",
+     "action": "space",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "jkl",
+     "num": "4",
+     "flick_data": {
+      "center": "j",
+      "left": "k",
+      "up": "l",
+      "right": "5"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "mno",
+     "num": "5",
+     "flick_data": {
+      "center": "m",
+      "left": "n",
+      "up": "o",
+      "right": "6"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "pqrs",
+     "num": "6",
+     "flick_data": {
+      "center": "p",
+      "left": "q",
+      "up": "r",
+      "right": "s",
+      "down": "7"
+     }
+    },
+    {
+     "type": "action",
+     "label": "変換",
+     "num": "変",
+     "action": "convert",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "tuv",
+     "num": "1",
+     "flick_data": {
+      "center": "t",
+      "left": "u",
+      "up": "v",
+      "right": "8"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "wxyz",
+     "num": "2",
+     "flick_data": {
+      "center": "w",
+      "left": "x",
+      "up": "y",
+      "right": "z",
+      "down": "9"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "@._/",
+     "num": "3",
+     "flick_data": {
+      "center": "@",
+      "left": ".",
+      "up": "_",
+      "right": "-",
+      "down": "/"
+     }
+    },
+    {
+     "type": "action",
+     "label": "次へ",
+     "num": "+",
+     "action": "next",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "␣",
+     "num": "0",
+     "flick_data": {
+      "center": " ",
+      "left": "\t",
+      "up": "\n",
+      "right": " ",
+      "down": " "
+     }
+    },
+    {
+     "type": "flick",
+     "key": ".,?!",
+     "num": ".",
+     "flick_data": {
+      "center": ".",
+      "left": ",",
+      "up": "?",
+      "right": "!",
+      "down": "-"
+     }
+    },
+    {
+     "type": "action",
+     "label": "A",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "確定",
+     "num": "Ent",
+     "action": "enter",
+     "style": "enter-cell"
+    }
+   ]
+  ],
+  "number": [
+   [
+    {
+     "type": "action",
+     "label": "記号",
+     "num": "/",
+     "action": "symbol",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "◀",
+     "num": "←",
+     "action": "left",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "▶",
+     "num": "→",
+     "action": "right",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "⌫",
+     "num": "BS",
+     "action": "backspace",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "7",
+     "num": "7",
+     "flick_data": {
+      "center": "7",
+      "left": "P",
+      "up": "Q",
+      "right": "R",
+      "down": "S"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "8",
+     "num": "8",
+     "flick_data": {
+      "center": "8",
+      "left": "T",
+      "up": "U",
+      "right": "V"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "9",
+     "num": "9",
+     "flick_data": {
+      "center": "9",
+      "left": "W",
+      "up": "X",
+      "right": "Y",
+      "down": "Z"
+     }
+    },
+    {
+     "type": "action",
+     "label": "空白",
+     "num": "-",
+     "action": "space",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "4",
+     "num": "4",
+     "flick_data": {
+      "center": "4",
+      "left": "G",
+      "up": "H",
+      "right": "I"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "5",
+     "num": "5",
+     "flick_data": {
+      "center": "5",
+      "left": "J",
+      "up": "K",
+      "right": "L"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "6",
+     "num": "6",
+     "flick_data": {
+      "center": "6",
+      "left": "M",
+      "up": "N",
+      "right": "O"
+     }
+    },
+    {
+     "type": "action",
+     "label": "変換",
+     "num": "変",
+     "action": "convert",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "1",
+     "num": "1",
+     "flick_data": {
+      "center": "1",
+      "left": "(",
+      "up": ")",
+      "right": "$",
+      "down": "%"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "2",
+     "num": "2",
+     "flick_data": {
+      "center": "2",
+      "left": "A",
+      "up": "B",
+      "right": "C"
+     }
+    },
+    {
+     "type": "flick",
+     "key": "3",
+     "num": "3",
+     "flick_data": {
+      "center": "3",
+      "left": "D",
+      "up": "E",
+      "right": "F"
+     }
+    },
+    {
+     "type": "action",
+     "label": "次へ",
+     "num": "+",
+     "action": "next",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "flick",
+     "key": "0",
+     "num": "0",
+     "flick_data": {
+      "center": "0",
+      "left": "+",
+      "up": "-",
+      "right": "*",
+      "down": "/"
+     }
+    },
+    {
+     "type": "flick",
+     "key": ".",
+     "num": ".",
+     "flick_data": null
+    },
+    {
+     "type": "action",
+     "label": "1",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "確定",
+     "num": "Ent",
+     "action": "enter",
+     "style": "enter-cell"
+    }
+   ]
+  ],
+  "nav": [
+   [
+    {
+     "type": "action",
+     "label": "Esc",
+     "num": "/",
+     "action": "esc",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "Home",
+     "num": "←",
+     "action": "home",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "End",
+     "num": "→",
+     "action": "end",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "⌫",
+     "num": "BS",
+     "action": "backspace",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "action",
+     "label": "Tab",
+     "num": "7",
+     "action": "tab",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "▲ 上",
+     "num": "8",
+     "action": "up",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "S-Tab",
+     "num": "9",
+     "action": "shift_tab",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "PgUp",
+     "num": "-",
+     "action": "page_up",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "action",
+     "label": "◀ 左",
+     "num": "4",
+     "action": "left",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "決定",
+     "num": "5",
+     "action": "enter",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "▶ 右",
+     "num": "6",
+     "action": "right",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "PgDn",
+     "num": "変",
+     "action": "page_down",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "action",
+     "label": "Shift",
+     "num": "1",
+     "action": "shift",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "▼ 下",
+     "num": "2",
+     "action": "down",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "Ctrl",
+     "num": "3",
+     "action": "ctrl",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "次へ",
+     "num": "+",
+     "action": "next",
+     "style": "action-cell"
+    }
+   ],
+   [
+    {
+     "type": "action",
+     "label": "Space",
+     "num": "0",
+     "action": "space",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "Del",
+     "num": ".",
+     "action": "delete",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "↑",
+     "num": "切替",
+     "action": "mode",
+     "style": "action-cell"
+    },
+    {
+     "type": "action",
+     "label": "確定",
+     "num": "Ent",
+     "action": "enter",
+     "style": "enter-cell"
+    }
+   ]
+  ]
+ }
+}
