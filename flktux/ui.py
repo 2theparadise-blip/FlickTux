@@ -89,6 +89,20 @@ window {
     font-weight: bold;
     margin-right: 3px;
 }
+.layout-combo {
+    background-color: #2b2c2f;
+    color: #8ab4f8;
+    border: 1px solid #5f6368;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+}
+.layout-combo button {
+    background: transparent;
+    border: none;
+    color: #e8eaed;
+    font-size: 11px;
+}
 .icon-btn {
     background: transparent;
     border: none;
@@ -300,11 +314,37 @@ class FlickTuxWindow(Gtk.Window):
         header.get_style_context().add_class("header-bar")
         header.connect("button-press-event", self.on_header_press)
 
-        for name in ["Google", "Galaxy", "iPhone", "ガラケー", "10キー"]:
-            btn = Gtk.Button(label=name)
-            btn.connect("clicked", self.on_tab_clicked, name)
-            header.pack_start(btn, False, False, 1)
-            self.tab_buttons[name] = btn
+        # Unified Layout Selector (Single button / dropdown)
+        self.layout_combo = Gtk.ComboBoxText()
+        self.layout_combo.get_style_context().add_class("layout-combo")
+        self.layout_combo.set_can_focus(False)
+
+        # Standard Presets
+        self.layout_options = [
+            ("Google", "⌨ Google (Gboard 20キー)"),
+            ("iPhone", "⌨ iPhone (iOS 19キー)"),
+            ("Galaxy", "⌨ Galaxy (Samsung 20キー)"),
+            ("10キー", "⌨ 10キー (電卓式 20キー)"),
+            ("プッシュボタン", "⌨ プッシュボタン (電話式 12キー)"),
+            ("ガラケー", "⌨ ガラケー (連打トグル 20キー)"),
+        ]
+
+        # Scan user custom keymaps
+        custom_dir = os.path.expanduser("~/.config/flktux/custom")
+        if os.path.isdir(custom_dir):
+            for fname in sorted(os.listdir(custom_dir)):
+                if fname.endswith(".json"):
+                    cid = os.path.splitext(fname)[0]
+                    self.layout_options.append((cid, f"★ {cid} (カスタム)"))
+
+        for lid, label in self.layout_options:
+            self.layout_combo.append(lid, label)
+
+        # Set initial selection
+        active_lid = self.current_layout_name if self.current_layout_name in [x[0] for x in self.layout_options] else "Google"
+        self.layout_combo.set_active_id(active_lid)
+        self.layout_combo.connect("changed", self.on_layout_combo_changed)
+        header.pack_start(self.layout_combo, False, False, 2)
 
         header.pack_start(Gtk.Label(label=""), True, True, 0)  # Spacer
 
@@ -432,7 +472,6 @@ class FlickTuxWindow(Gtk.Window):
                 GLib.source_remove(self._clamp_timer_id)
                 self._clamp_timer_id = None
         ungrab_pointer()
-        Gtk.main_quit()
 
     def on_edge_press(self, widget, event):
         if event.button == 1:
@@ -531,45 +570,68 @@ class FlickTuxWindow(Gtk.Window):
         win.connect("destroy", lambda w: self._apply_confine() if self.is_confined else None)
         win.show_all()
 
+    def on_close_clicked(self, widget):
+        self.destroy()
+        Gtk.main_quit()
+
+    def on_layout_combo_changed(self, combo):
+        lid = combo.get_active_id()
+        if lid and lid != self.current_layout_name:
+            self.current_layout_name = lid
+            self.save_layout(lid)
+            self.rebuild_keys()
+
+            if lid in ("10キー", "プッシュボタン"):
+                self.numpad_listener.start()
+            else:
+                self.numpad_listener.stop()
+
     def on_tab_clicked(self, btn, layout_name):
         if self.current_layout_name != layout_name:
             self.current_layout_name = layout_name
             self.save_layout(layout_name)
-            self.update_tab_styles()
+            if hasattr(self, 'layout_combo'):
+                self.layout_combo.set_active_id(layout_name)
             self.rebuild_keys()
 
-            if layout_name == "10キー":
+            if layout_name in ("10キー", "プッシュボタン"):
                 self.numpad_listener.start()
             else:
                 self.numpad_listener.stop()
 
     def update_tab_styles(self):
-        for name, btn in self.tab_buttons.items():
-            ctx = btn.get_style_context()
-            ctx.remove_class("tab-btn")
-            ctx.remove_class("tab-btn-active")
-            if name == self.current_layout_name:
-                ctx.add_class("tab-btn-active")
-            else:
-                ctx.add_class("tab-btn")
+        pass
 
     def rebuild_keys(self):
         for child in self.grid.get_children():
             self.grid.remove(child)
 
-        self.current_matrix = get_layout(self.current_layout_name, self.input_mode)
+        # Check for user custom keymap first
+        custom_file = os.path.expanduser(f"~/.config/flktux/custom/{self.current_layout_name}.json")
+        if os.path.isfile(custom_file):
+            try:
+                import json
+                with open(custom_file, "r", encoding="utf-8") as f:
+                    cdata = json.load(f)
+                    self.current_matrix = cdata.get("modes", {}).get(self.input_mode, [])
+            except Exception as e:
+                print(f"Failed loading custom layout {self.current_layout_name}: {e}")
+                self.current_matrix = get_layout("Google", self.input_mode)
+        else:
+            self.current_matrix = get_layout(self.current_layout_name, self.input_mode)
 
         for r, row in enumerate(self.current_matrix):
             for c, cell_info in enumerate(row):
                 widget = self.create_cell_widget(cell_info)
                 self.grid.attach(widget, c, r, 1, 1)
 
-        # Adjust window size: 10-key is 5 rows x 4 cols (tall), others 4 rows x 5 cols
-        if len(self.current_matrix) > len(self.current_matrix[0]) or len(self.current_matrix) == 5:
-            self.set_size_request(310, 370)
-        else:
-            self.set_size_request(370, 280)
-        self.resize(1, 1)
+        # Adjust window size dynamically based on matrix rows and cols
+        rows = len(self.current_matrix)
+        cols = len(self.current_matrix[0]) if rows > 0 else 5
+        target_w = max(240, cols * 70 + 15)
+        target_h = max(270, rows * 64 + 35)
+        self.set_size_request(target_w, target_h)
+        self.resize(target_w, target_h)
         self.grid.show_all()
 
     def snap_pointer_to_cell_center(self, widget, event):
