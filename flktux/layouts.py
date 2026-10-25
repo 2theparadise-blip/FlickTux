@@ -375,9 +375,9 @@ def get_layout(layout_name: str, mode: str = "kana"):
         ]
     elif layout_name == "iPhone":
         # iPhone (iOS 日本語かなフリック):
-        # 左列: ☆123, ABC, 小 ゛゜, 🌐
+        # 左列: ☆123, ABC, あいう, 🌐
         # 右列: ⌫, 空白, 改行 (rowSpan: 2)
-        # 中央下段: 空き, わ, 、。？！
+        # 中央下段: 小 ゛゜, わ, 、。？！
         return [
             [{"type": "action", "label": "☆123", "action": "number", "style": "action-cell"},
              {"type": "flick", "key": c0, "flick_data": fd_map.get(c0)},
@@ -389,13 +389,13 @@ def get_layout(layout_name: str, mode: str = "kana"):
              {"type": "flick", "key": c4, "flick_data": fd_map.get(c4)},
              {"type": "flick", "key": c5, "flick_data": fd_map.get(c5)},
              {"type": "action", "label": "空白", "action": "space", "style": "action-cell"}],
-            [{"type": "action", "label": "小 ゛゜" if mode == "kana" else dak_label, "action": "dakuten", "style": "action-cell"},
+            [{"type": "action", "label": "あいう", "action": "kana", "style": "action-cell"},
              {"type": "flick", "key": c6, "flick_data": fd_map.get(c6)},
              {"type": "flick", "key": c7, "flick_data": ya_fd},
              {"type": "flick", "key": c8, "flick_data": fd_map.get(c8)},
              {"type": "action", "label": "改行", "action": "enter", "style": "enter-cell", "rowSpan": 2}],
             [{"type": "action", "label": "🌐", "action": "mode", "style": "action-cell"},
-             {"type": "action", "label": "マイク", "action": "space", "style": "action-cell"},
+             {"type": "action", "label": "小 ゛゜" if mode == "kana" else dak_label, "action": "dakuten", "style": "action-cell"},
              {"type": "flick", "key": c9, "flick_data": fd_map.get(c9)},
              {"type": "flick", "key": cdot, "flick_data": fd_map.get(cdot)},
              {"type": "action", "label": "改行", "action": "enter", "style": "enter-cell"}],

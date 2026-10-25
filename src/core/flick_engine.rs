@@ -291,6 +291,14 @@ impl Engine {
                 self.set_mode(m);
                 vec![]
             }
+            "alpha" => {
+                self.set_mode("alpha");
+                vec![]
+            }
+            "kana" => {
+                self.set_mode("kana");
+                vec![]
+            }
             "symbol" => {
                 let m = if self.mode == "alpha" { "kana" } else { "alpha" };
                 self.set_mode(m);

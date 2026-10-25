@@ -1302,6 +1302,14 @@ class FlickTuxWindow(Gtk.Window):
             self.input_mode = "number" if self.input_mode != "number" else "kana"
             self.save_layout(self.current_layout_name)
             self.rebuild_keys()
+        elif action == "alpha":
+            self.input_mode = "alpha"
+            self.save_layout(self.current_layout_name)
+            self.rebuild_keys()
+        elif action == "kana":
+            self.input_mode = "kana"
+            self.save_layout(self.current_layout_name)
+            self.rebuild_keys()
         elif action == "symbol":
             self.input_mode = "alpha" if self.input_mode != "alpha" else "kana"
             self.save_layout(self.current_layout_name)

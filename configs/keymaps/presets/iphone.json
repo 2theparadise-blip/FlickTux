@@ -102,8 +102,8 @@
    [
     {
      "type": "action",
-     "label": "小 ゛゜",
-     "action": "dakuten",
+     "label": "あいう",
+     "action": "kana",
      "style": "action-cell"
     },
     {
@@ -156,8 +156,8 @@
     },
     {
      "type": "action",
-     "label": "マイク",
-     "action": "space",
+     "label": "小 ゛゜",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {
@@ -288,8 +288,8 @@
    [
     {
      "type": "action",
-     "label": "゛゜小",
-     "action": "dakuten",
+     "label": "あいう",
+     "action": "kana",
      "style": "action-cell"
     },
     {
@@ -342,8 +342,8 @@
     },
     {
      "type": "action",
-     "label": "マイク",
-     "action": "space",
+     "label": "゛゜小",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {
@@ -469,8 +469,8 @@
    [
     {
      "type": "action",
-     "label": "a/A",
-     "action": "dakuten",
+     "label": "あいう",
+     "action": "kana",
      "style": "action-cell"
     },
     {
@@ -522,8 +522,8 @@
     },
     {
      "type": "action",
-     "label": "マイク",
-     "action": "space",
+     "label": "a/A",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {
@@ -649,8 +649,8 @@
    [
     {
      "type": "action",
-     "label": "+/-",
-     "action": "dakuten",
+     "label": "あいう",
+     "action": "kana",
      "style": "action-cell"
     },
     {
@@ -702,8 +702,8 @@
     },
     {
      "type": "action",
-     "label": "マイク",
-     "action": "space",
+     "label": "+/-",
+     "action": "dakuten",
      "style": "action-cell"
     },
     {

@@ -678,6 +678,36 @@ pub mod native_gtk {
                         keyboard,
                     );
                 }
+                "alpha" => {
+                    *mode_rc.borrow_mut() = "alpha".to_string();
+                    Self::rebuild_keys_internal(
+                        grid,
+                        preset_rc,
+                        mode_rc,
+                        config_rc,
+                        active_flick_rc,
+                        overlay,
+                        guide_area,
+                        last_char_rc,
+                        #[cfg(target_os = "linux")]
+                        keyboard,
+                    );
+                }
+                "kana" => {
+                    *mode_rc.borrow_mut() = "kana".to_string();
+                    Self::rebuild_keys_internal(
+                        grid,
+                        preset_rc,
+                        mode_rc,
+                        config_rc,
+                        active_flick_rc,
+                        overlay,
+                        guide_area,
+                        last_char_rc,
+                        #[cfg(target_os = "linux")]
+                        keyboard,
+                    );
+                }
                 "symbol" => {
                     let current = mode_rc.borrow().clone();
                     *mode_rc.borrow_mut() = if current == "nav" {
