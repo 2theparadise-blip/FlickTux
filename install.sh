@@ -20,9 +20,9 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # 1. Install dependencies
-echo "📦 Checking and installing system dependencies (including zinnia handwriting & xclip)..."
+echo "📦 Checking and installing system dependencies (including zinnia handwriting, xclip & touchegg)..."
 apt-get update -qq
-apt-get install -y -qq python3 python3-gi python3-gi-cairo python3-xlib gir1.2-gtk-3.0 xdotool xclip zinnia-utils tegaki-zinnia-japanese xserver-xorg-input-wacom xinput >/dev/null || true
+apt-get install -y -qq python3 python3-gi python3-gi-cairo python3-xlib gir1.2-gtk-3.0 xdotool xclip zinnia-utils tegaki-zinnia-japanese xserver-xorg-input-wacom xinput touchegg >/dev/null || true
 
 # 2. Deploy source to /opt/flicktux
 echo "📂 Copying files to ${INSTALL_DIR}..."
@@ -32,6 +32,7 @@ if [ "${SCRIPT_DIR}" != "${INSTALL_DIR}" ]; then
     [ -d "${SCRIPT_DIR}/bin" ] && cp -r "${SCRIPT_DIR}/bin" "${INSTALL_DIR}/"
     [ -d "${SCRIPT_DIR}/assets" ] && cp -r "${SCRIPT_DIR}/assets" "${INSTALL_DIR}/"
     [ -d "${SCRIPT_DIR}/desktop" ] && cp -r "${SCRIPT_DIR}/desktop" "${INSTALL_DIR}/"
+    [ -d "${SCRIPT_DIR}/configs" ] && cp -r "${SCRIPT_DIR}/configs" "${INSTALL_DIR}/"
 fi
 chmod -R a+rX "${INSTALL_DIR}"
 [ -f "${INSTALL_DIR}/bin/flktux" ] && chmod a+rx "${INSTALL_DIR}/bin/flktux"
@@ -90,13 +91,32 @@ for U in "${TARGET_USERS[@]}"; do
             dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/command \"'/usr/local/bin/flktux toggle'\" 2>/dev/null || true
             dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding \"['F12']\" 2>/dev/null || true
         " 2>/dev/null || true
+
+        # 8. Configure 3-Finger Swipe Gesture (Touchégg)
+        echo "🖐️ Configuring 3-finger swipe gesture for user ${U}..."
+        USER_CONF="/home/${U}/.config/touchegg"
+        mkdir -p "${USER_CONF}"
+        TSRC="${SCRIPT_DIR}/configs/touchegg.conf"
+        [ ! -f "${TSRC}" ] && TSRC="${INSTALL_DIR}/configs/touchegg.conf"
+        if [ -f "${TSRC}" ]; then
+            cp "${TSRC}" "${USER_CONF}/touchegg.conf"
+            chown -R "${U}:${U}" "${USER_CONF}"
+            chmod 644 "${USER_CONF}/touchegg.conf"
+        fi
         break
     fi
 done
 
+# Restart Touchégg daemon
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl enable touchegg >/dev/null 2>&1 || true
+    systemctl restart touchegg >/dev/null 2>&1 || true
+fi
+
 echo "=================================================================="
 echo "🎉 FlickTux (flktux) successfully installed!"
 echo "   Launch via: F12 key (Global Toggle)"
+echo "   Launch via: 3-Finger Swipe UP/DOWN (Touch Gesture)"
 echo "   Launch via: Plank Dock (Click FlickTux icon)"
 echo "   Launch via: Application Menu (Accessories / System)"
 echo "   Launch via: Terminal ('flktux toggle')"
