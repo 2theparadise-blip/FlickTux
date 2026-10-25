@@ -1,0 +1,129 @@
+# Linux用仮想フリックキーボード 基本仕様書（ver. 0.05）
+
+## 改訂履歴
+- **ver. 0.01**：初期仕様策定（Pythonベース暫定構成）
+- **ver. 0.02**：
+  - 開発言語を **Rust** に変更
+  - 初期ターゲット環境を **Linux Mint（Cinnamon / MATE / Xfce：X11環境）** に最適化（将来のUbuntu / Wayland拡張性を維持）
+  - 日本語変換連携を最速の **カーネル `uinput` ローマ字バースト送出方式（＋D-Bus直接送出ハイブリッド）** に決定
+  - **ペンタブ・液タブのドライバ不安定対策（非依存フィルタリング＆Raw evdevバイパス機構）** を新規設計
+- **ver. 0.03**：
+  - **ペンタブ・液タブの「ペン＋タッチ（Pen & Touch）形式」への対応仕様** を追加
+  - ペン操作中の手のひら誤接触を遮断する **アプリ内パームリジェクション（Pen Proximity / Cooldown Lock）** を追加
+  - X11コアポインタ上でペン座標とタッチ座標が混線した際に主ストロークのみを分離追跡する **空間クラスタロック（Spatial Cluster Locking）** を追加
+  - ペン入力と指タッチ入力の物理特性差に応じた **デュアルスタビライザ・プロファイル** と **マルチタッチ（2本指トラックパッド化）制御** を追加
+- **ver. 0.04**：
+  - **ルーン（Rune）ジェスチャー入力機構**（一筆書きの多段折れ線・図形軌跡によるコマンド実行・定型文入力・モード切替）を追加
+  - **3本指タップ（Three-Finger Tap）によるキーボード起動・召喚（表示/非表示トグル）仕様** を追加
+  - **ルーン描画によるキーボード起動（Summon by Rune）仕様**（待機中に特定の一筆書きルーンを描いた座標へキーボードを召喚）を追加
+- **ver. 0.05（本版）**：
+  - **ポインタ拘束の完全撤廃（自由移動）**：文字入力中のポインタ強制ワープ（`device.warp`）や画面クランプを完全廃止し、ペン先やマウスが画面全体を自由に行き来可能に。
+  - **仮入力・入力文字列表示スペース（Display Bar）の新設**：確定済み文字列（白文字ボールド）と仮入力中文字（水色下線）をリアルタイム表示するプレビューバーをヘッダー直下に常設。
+  - **キーホバー時の予備的仮入力 ＆ 初期点復帰デッドゾーン（18px以内）**：キーに乗った瞬間に代表文字をエディタと表示バーに予備配置。18px以内への引き戻しで中心文字へ安全復帰。
+  - **筆圧対応 手書き文字認識（Linux `zinnia` / `tegaki-zinnia-japanese` 連携）**：描画ストロークから漢字・かな・英数字を認識し、ワンタップで文字コード入力。
+  - **手書き文字の画像スタンプ配置（Linux `xclip` ＋ `Ctrl+V` 連携）**：描いた文字・サインを自動クロップして透過PNG化し、キャンバスやエディタ上へ直接スタンプ貼り付け。
+  - **Ubuntu / Linux / UNIX コマンド特化予測 ＆ 多言語コード補完バー（`codepredict`）**：`sudo`, `systemctl`, `apt`, `git`, `docker`, パイプ/リダイレクト、多言語スニペット（Python, Rust, Bash, JS, C++）を搭載。
+  - **アクティブウィンドウ自動検知**：端末（Terminal）やエディタのフォーカスに合わせて予測モードと言語を自動追従。
+
+---
+
+## 1. 再利用するLinux標準ツール・ライブラリ・資産
+
+| 機能領域 | 再利用するLinuxツール・ライブラリ・資産 | 役割・活用方法 |
+| :--- | :--- | :--- |
+| **Linux/UNIXコマンド補完** | **`/usr/share/bash-completion`**<br>**`/etc/bash_completion.d`** | Ubuntu/Linux標準のコマンド補完定義を直接再利用し、数千コマンドのサブコマンド・引数を瞬時に予測。 |
+| **手書き文字認識**<br>(キーボード入力) | **`zinnia` (`libzinnia0`, `zinnia-utils`)**<br>**`tegaki-zinnia-japanese`** | Linux標準のオンライン手書き文字認識エンジン（SVMベース）。描画ストローク座標列を渡し、漢字・かなを高精度認識。 |
+| **手書き文字の配置**<br>(画像スタンプ配置) | **`xclip` (`xclip -selection clipboard -t image/png`)** | 手書きキャンバスの透過PNG画像をX11クリップボードへ直接流し込み。 |
+| **自動ペースト・文字送信** | **`xdotool` (`flktux.xdo.XdoPipe`)** | 常駐パイプラインから `Ctrl+V`（手書き配置）や `BackSpace`＋文字送信（仮入力同期）、カッコ内カーソル復帰（`Left`）を実行。 |
+| **コード補完データ** | **VS Code / Vim スニペット形式 (JSON)** | Python, Rust, Bash, C/C++, JSなどの言語予約語・標準関数・構文テンプレートを再利用。 |
+| **ウィンドウ・端末自動検知** | **`xdotool` (`getactivewindow`)** | アクティブウィンドウを監視し、端末なら「Linuxコマンドモード」、エディタなら拡張子に応じた言語モードへ自動切替。 |
+| **UI・筆圧描画** | **GTK 3, Cairo, Pango** | Linux Mint標準グラフィックススタック。筆圧対応ストローク描画、透過背景、アンチエイリアステキスト描画。 |
+| **画像処理・トリミング** | **Python `cairo.ImageSurface`** | 描いた文字のバウンディングボックスを自動検出し、余白を自動クロップした透過PNGを瞬時に生成。 |
+
+---
+
+## 2. 新規追加機能仕様（ver. 0.05）
+
+### 2.1 ポインタ拘束の完全撤廃（自由移動）
+- 従来搭載されていた `_clamp_pointer`（30ms強制タイマーによる画面ワープ）およびセルタップ時の中心強制移動（`device.warp`）を完全撤廃。
+- スタイラスペンやマウスカーソルがキーボード外へシームレスに脱出し、画面全体を自由に行き来可能。
+
+### 2.2 仮入力・文字列表示バー（Display Bar）
+- ヘッダー直下にスリムなプレビューバーを新設。
+- **2層テキストバッファ同期**:
+  - `committed_text`: 確定済み文字列（白文字ボールド表示）。
+  - `preedit_text` / `hover_tentative_char`: 仮入力中の文字（水色 `#8ab4f8` ＋ 単一下線表示）。
+- **クイックアクション**:
+  - `⌫` (BackSpace): 直前の1文字消去。
+  - `↵` (Return): エディタへEnter送信し表示スペースを確定クリア。
+  - `✕` (Clear): 表示スペースの全クリア。
+
+### 2.3 キーホバー予備入力 ＆ 初期点復帰判定
+1. **ホバー予備入力 (`enter-notify-event`)**:
+   - キーの上にポインタが乗った瞬間に代表文字（center文字: 「あ」「1」「a」等）を取得。
+   - エディタ側へ `XDO.type(center_char)` を発行し、エディタおよびFlickTux表示スペースに予備配置。
+2. **初期点復帰デッドゾーン ($d \le 18\text{px}$)**:
+   - フリックドラッグ中、初期点から18px以上離れて方向が検出された後でも、指／ペンを初期点付近（18px以内）に戻せば、即座に中央文字（「あ」）へ自動置換（`replace`）。そのまま離せばタップ文字として確定。
+3. **離脱キャンセル (`leave-notify-event`)**:
+   - タップされずにキーボード領域外へ離脱した場合、70msタイマーでキャンセルを確定し、エディタに `BackSpace` を送信して仮文字を自動消去。
+
+### 2.4 筆圧対応 手書き文字認識 ＆ 手書き文字スタンプ配置
+- **手書きキーボード入力 (Linux `zinnia` / `tegaki-zinnia-japanese` 連携)**:
+  - 描画ストロークの $(x, y, \text{pressure})$ シーケンスを `zinnia-recognize` に渡し、SVMモデルで解析。
+  - 上位候補（最大7件）をパッド上部の候補バーに提示し、ワンタップでエディタへ文字コード入力。
+- **手書き文字スタンプ配置 (Linux `xclip` ＋ `Ctrl+V` 連携)**:
+  - 描画されたストロークのバウンディングボックスを自動計算し、余白を自動クロップ。
+  - 背景透過PNG画像（`/tmp/flktux_handwriting.png`）を生成し、`xclip` でクリップボードへ直接格納。
+  - `XDO.key("ctrl+v")` を発行し、Krita・GIMP・エディタ等のキャンバス・画面上に手書き文字そのものをスタンプ配置。
+
+### 2.5 Ubuntu / Linux / UNIX コマンド特化予測 ＆ 多言語コード補完
+- **Ubuntu/Linuxコマンド予測**:
+  - `s` ➔ `sudo`, `systemctl status`, `systemctl restart`, `ssh`, `sed`
+  - `g` ➔ `git status`, `git commit -m ""`, `git diff`, `grep -rnI "" .`
+  - `d` ➔ `docker ps`, `docker compose up -d`, `df -h`, `dpkg -i`
+  - `a` ➔ `sudo apt update && sudo apt upgrade -y`, `sudo apt install`
+  - パイプ・リダイレクト: `| grep `, `| less `, `> /dev/null 2>&1`, `&& `
+- **多言語コード予測**:
+  - Python, Rust, Bash, JS/TS, C++ の構文・予約語スニペットを搭載。カッコペア補完＋スマートカーソル復帰（`()` 挿入後に内側へ戻る）に対応。
+- **アクティブウィンドウ自動検知**:
+  - `xdotool` で定期的にフォーカスウィンドウ名を監視。端末アプリなら「Linuxコマンドモード」、エディタなら拡張子に応じた言語モードへ自動追従。
+
+---
+
+## 3. ディレクトリ構造（ver. 0.05）
+
+```text
+FlickTux/
+├── Cargo.toml                        # Rustコアパッケージ定義
+├── Cargo.lock
+├── README.md                         # セットアップ＆総合機能解説マニュアル
+├── SPECIFICATION.md                  # 詳細技術仕様書 (ルート版)
+├── install.sh                        # 自動インストーラー (xclip, zinnia-utils, tegaki-zinnia-japanese導入対応)
+├── bin/
+│   ├── flktux                        # コマンド実行ファイル (トグル・CLI)
+│   └── flktux-settings               # 感度設定センター実行ファイル
+├── flktux/
+│   ├── __init__.py
+│   ├── codepredict.py                # 【新設】Ubuntu/Linuxコマンド ＆ 多言語コード予測補完エンジン
+│   ├── handwriting.py                # 【新設】筆圧対応手書き描画キャンバス、zinnia認識、xclip透過配置
+│   ├── layouts.py                    # 5大配列 & 5大モード (かな/カナ/英字/数字/ナビ)
+│   ├── numpad_listener.py            # 物理テンキー (Xlib/evdev) リスナー
+│   ├── settings_gui.py               # GTK3 設定 GUI & リアルタイム試し書き広場
+│   ├── ui.py                         # GTK3 UI 本体 (自由移動, ホバー予備入力, 表示バー, 予測バー, 手書き切替)
+│   ├── wacom.py                      # xsetwacom 制御 & 16:9 比率補正
+│   ├── xdo.py                        # 常駐 xdotool パイプライン
+│   └── docs/
+│       ├── SPECIFICATION.md          # 詳細技術仕様書 (詳細版)
+│       ├── Linux用仮想フリックキーボード 基本仕様書・ディレクトリ構造 (ver. 0.05).md
+│       ├── FLICKTUX_RS_CYBERDECK_SPEC.md
+│       └── HTML_VER009_INTEGRATION_PLAN.md
+├── docs/
+│   ├── FEATURE_HANDWRITING_AND_CODE_PREDICTION.md # 新機能詳細技術仕様書
+│   ├── LAYOUT_FIX_PLAN.md
+│   └── MULTI_DEVICE_SUPPORT_PLAN.md
+├── assets/                           # アイコン・画像アセット群
+├── configs/                          # キーマップ設定 (Google, Galaxy, iPhone, ガラケー, 10キー)
+└── desktop/
+    ├── flktux.desktop                # デスクトップランチャー
+    └── flktux-settings.desktop       # 設定センターランチャー
+```

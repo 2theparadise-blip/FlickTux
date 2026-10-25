@@ -1,0 +1,115 @@
+# FlickTux 機能追加・改修 技術仕様書 (Ver. 1.2.0)
+## 手書きパッド・Ubuntu/Linuxコマンド予測・コード補完・ポインタ自由移動
+
+本ドキュメントは、FlickTux (`flktux`) において実装された以下の改修・拡張機能の技術仕様および実装内容を定義します。
+
+---
+
+## 1. 実装項目サマリー
+
+| 項目 | 概要 | 実装モジュール / 連携ツール |
+| :--- | :--- | :--- |
+| **1. ポインタ拘束の完全撤廃** | 入力中のウィンドウ外移動制限 (`device.warp`) およびタップ時中心スナップを撤廃し、画面全体の自由なポインタ移動を担保 | `flktux/ui.py` |
+| **2. 仮入力・文字列表示バー** | 確定テキストおよび下線付き仮入力文字をエディタとリアルタイム同期表示するスリムバーを新設 | `flktux/ui.py` (Display Bar) |
+| **3. キーホバー予備入力** | キーにポインタが乗った瞬間に代表文字をエディタと表示バーに予備配置、初期点復帰デッドゾーン（18px）対応 | `flktux/ui.py` (`on_cell_enter/leave`) |
+| **4. 筆圧手書き文字認識** | 描画ストロークから漢字・かな・英数字を高精度認識し、ワンタップでエディタへ文字コード入力 | `flktux/handwriting.py`<br>Linux `zinnia-recognize` |
+| **5. 手書き文字のスタンプ配置** | 描いた文字・サインを自動クロップして透過PNG化し、`Ctrl+V` でキャンバス・画面上に直接貼り付け配置 | `flktux/handwriting.py`<br>Linux `xclip` ＋ `xdotool` |
+| **6. Ubuntu/Linuxコマンド予測** | 端末（Terminal）操作時、`sudo`, `systemctl`, `apt`, `git`, `docker`, パイプ/リダイレクト等をワンタップ補完 | `flktux/codepredict.py` |
+| **7. 多言語コード予測補完** | Python, Rust, Bash, JS/TS, C++ の頻出構文・予約語スニペットおよびカッコペア補完＋カーソル自動復帰 | `flktux/codepredict.py` |
+| **8. ウィンドウ言語自動検知** | アクティブウィンドウのタイトルから端末やファイル拡張子を検知し、予測言語モードを自動追従 | `flktux/codepredict.py`<br>`xdotool` |
+
+---
+
+## 2. アーキテクチャおよびデータフロー
+
+```text
+[ ポインタ / スタイラスペン / タッチパッド ]
+                    │
+                    ├──> [キーホバー (enter-notify)] ──> 予備文字を XDO.type / replace ──> [エディタ]
+                    │                                     └──> Display Bar に下線表示
+                    │
+                    ├──> [フリック / タップ] ──────────> 文字決定 ──> Display Bar 確定テキストへ追加
+                    │                                     └──> Prediction Strip を更新
+                    │
+                    ├──> [手書きパッド (cairo)] ────────> zinnia 認識 ──> 候補タップで文字入力
+                    │                                     └──> xclip 透過PNG ──> Ctrl+V でスタンプ配置
+                    │
+                    └──> [コード/Linuxコマンド予測バー] ─> タップでスニペット展開 ＋ カーソル復帰
+```
+
+---
+
+## 3. 各機能の詳細仕様
+
+### 3.1 ポインタ拘束の完全撤廃 (自由移動)
+- **背景と課題**:
+  従来はキーボード操作中にポインタがウィンドウ外に出ないよう、30ms周期で `device.warp` によるクランプ拘束を行っていたため、画面の他ウィンドウ（お絵描きキャンバス、ブラウザ、エディタ）への自由なポインタ移動が阻害されていた。
+- **改修内容**:
+  - `_clamp_pointer`、`_apply_confine` メソッドを完全削除。
+  - セル押下時の `snap_pointer_to_cell_center` から `device.warp` を削除し、ポインタの位置を動かさずに直接イベント座標を保持。
+  - ヘッダーバーの 🔒/🔓 ボタンを削除し、手書きパッド切替ボタン（`[ ✍ 手書き ]`）に転用。
+
+### 3.2 仮入力・入力文字列表示バー (Display Bar)
+- **UI配置**: ヘッダー直下にスリムなプレビューバー（背景: `#17181a`、枠線: `#3c4043`）を配置。
+- **2層バッファ管理**:
+  - `committed_text`: 確定済み文字列（白文字ボールド）。
+  - `preedit_text` / `hover_tentative_char`: 仮入力中文字（水色 `#8ab4f8` ＋ 単一下線）。
+- **クイックアクション**:
+  - `⌫` (BackSpace): 直前文字消去。
+  - `↵` (Return): エディタへEnter送信し表示スペースを確定クリア。
+  - `✕` (Clear): 表示スペースの全クリア。
+
+### 3.3 キーホバー予備入力 ＆ 初期点復帰判定
+1. **ホバー予備入力 (`enter-notify-event`)**:
+   - キーの枠内にポインタが入った瞬間、代表文字（center文字: 「あ」「1」「a」等）を取得。
+   - `XDO.type`（または直前仮文字があれば `XDO.replace`）を発行し、エディタと表示バーに予備表示。
+2. **初期点復帰デッドゾーン ($d \le 18\text{px}$)**:
+   - フリックドラッグ中、18px以上離れて方向が検出された後でも、ポインタを初期点付近（18px以内）に戻せば、即座に中央文字（「あ」）へ置換復帰。離せば中央文字として確定。
+3. **離脱キャンセル (`leave-notify-event`)**:
+   - クリックされずにキー外へ出た場合、70msタイマーでキャンセルを確定し、`BackSpace` を送信して自動消去。
+
+### 3.4 手書き入力用パッド (Linuxツール再利用)
+- **手書きキャンバス (`HandwritingCanvas`)**:
+  - Gtk.DrawingArea ＋ cairo による筆圧対応描画。
+  - ペンタブの筆圧（`Gdk.AxisUse.PRESSURE`）に応じた線の太さのダイナミック変化。
+  - `↩ 1画戻す`（Undo）、`🧹 クリア` 機能。
+- **機能①: 手書きキーボード入力 (Linux `zinnia` 連携)**:
+  - ストローク座標を `zinnia-recognize` に渡し、SVM日本語モデル（`tegaki-zinnia-japanese`）で漢字・かな・英数字を認識。
+  - 候補バーにボタン提示、タップで `XDO.type(cand)` 入力。
+- **機能②: 手書き文字の配置 (Linux `xclip` ＋ `Ctrl+V` 連携)**:
+  - ストロークの最小外接矩形を計算し、余白を自動クロップ。
+  - 背景透過の白色高精細PNG（`/tmp/flktux_handwriting.png`）を生成。
+  - `xclip -selection clipboard -t image/png` でクリップボードに格納し、`XDO.key("ctrl+v")` でアクティブウィンドウへ直接ペースト配置。
+
+### 3.5 Ubuntu / Linux / UNIX コマンド ＆ 多言語コード特化 予測補完
+- **Linux/UNIXコマンド特化辞書**:
+  - `sudo`, `systemctl status/restart/start/stop/enable --now`, `journalctl -u -f`, `apt update/install/search`, `git status/commit/diff/checkout`, `docker ps/compose up -d`, `curl -sSL`, `ssh`, `ls -la`, `chmod +x` 等。
+  - パイプ・リダイレクト（`| grep `, `| less`, `| head -n 20`, `| awk '{print $1}'`, `> /dev/null 2>&1`, `&& `）。
+- **多言語プログラミングコードスニペット**:
+  - Python (`def ():`, `__init__`, `class :`, `print()`, `self.`, `import `)
+  - Rust (`fn () -> {}`, `pub fn ()`, `let mut `, `match  {}`, `println!()`, `Result<, >`)
+  - Bash (`#!/usr/bin/env bash`, `if [  ]; then`, `for  in ; do`, `echo ""`)
+  - JavaScript / TypeScript (`const `, `function () {}`, `() => {}`, `console.log()`, `async/await`)
+  - C / C++ (`#include <>`, `int main()`, `std::cout`, `printf()`, `nullptr`)
+- **スマートカッコ補完**:
+  - `()` や `{}` や `""` などのペア記号を挿入後、自動的に `Left` キーを送信してカーソルをペアの内側に復帰。
+- **アクティブウィンドウ自動検知**:
+  - `xdotool getactivewindow getwindowname` を定期監視。
+  - ターミナルアプリなら **「🐧 Linuxコマンドモード」** に自動切替。
+  - エディタアプリならファイル拡張子（`.py`, `.rs`, `.sh`, `.js`, `.c` 等）に応じて言語モードを自動切替。
+
+---
+
+## 4. 依存パッケージおよび動作要件
+
+### 必要パッケージ (Ubuntu / Linux Mint / Debian)
+```bash
+sudo apt update
+sudo apt install -y python3 python3-gi python3-gi-cairo python3-xlib \
+    gir1.2-gtk-3.0 xdotool xclip zinnia-utils tegaki-zinnia-japanese \
+    xserver-xorg-input-wacom xinput
+```
+
+- `xclip`: 手書き文字透過PNGのクリップボード格納に使用。
+- `zinnia-utils`, `tegaki-zinnia-japanese`: 手書き漢字・かな認識エンジンおよび日本語学習モデル。
+- `xdotool`: 文字送信、キー置換、カッコ内カーソル復帰、アクティブウィンドウ検知に使用。

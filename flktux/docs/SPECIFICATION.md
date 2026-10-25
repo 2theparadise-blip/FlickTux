@@ -3,8 +3,24 @@
 - **プロジェクト名**: FlickTux
 - **CLIコマンド名**: `flktux` / `flktux-settings`
 - **対象プラットフォーム**: Linux (X11) / Linux Mint (Cinnamon), Ubuntu, Debian
-- **バージョン**: 1.1.0
+- **バージョン**: 1.2.0 (手書きパッド・Linuxコマンド＆コード予測・自由移動統合版)
 - **リポジトリ**: [https://github.com/2theparadise-blip/FlickTux](https://github.com/2theparadise-blip/FlickTux)
+
+### 改訂履歴
+| バージョン | 日付 | 主な改訂内容 |
+| :--- | :--- | :--- |
+| **v1.0.0** | 2026-10-18 | 初期リリース。5大配列（Google, Galaxy, iPhone, ガラケー, 10キー）、常駐xdoパイプ、Wacom制御。 |
+| **v1.1.0** | 2026-10-21 | 物理テンキー左手デバイス連動、16:9比率補正、濁点・小文字置換アトミック化、設定GUI試し書き広場。 |
+| **v1.2.0** | 2026-10-25 | **ポインタ拘束の完全撤廃（自由移動）**、**仮入力・文字列表示バー（Display Bar）**、**キーホバー予備入力＆初期点復帰デッドゾーン（18px）**、**筆圧手書き文字認識（Linux zinnia連携）**、**手書き文字スタンプ配置（Linux xclip＋Ctrl+V連携）**、**Ubuntu/Linuxコマンド特化予測＆多言語コード補完バー（codepredict）**、**アクティブウィンドウ自動検知**。 |
+
+### 再利用するLinux標準ツール・資産
+| ツール / パッケージ | 役割・用途 |
+| :--- | :--- |
+| **`zinnia-utils`** / **`tegaki-zinnia-japanese`** | Linux標準のSVM学習手書き文字認識エンジン。描画ストロークから漢字・かなを高精度認識。 |
+| **`xclip`** | 描いた手書き文字の透過PNG画像をX11クリップボードへ直接流し込み。 |
+| **`xdotool`** | 常駐パイプライン制御、アクティブウィンドウ名検知、キー・文字送信、手書きスタンプ配置（`Ctrl+V`）。 |
+| **`cairo`** / **`pango`** | GTK3グラフィックス。筆圧ストローク描画、自動バウンディングボックストリミング、透過画像生成。 |
+| **`/usr/share/bash-completion`** | Linuxシステムコマンドの引数・オプション辞書の再利用。 |
 
 ---
 
@@ -23,17 +39,20 @@ FlickTux は、ペンタブレット（Wacom Bamboo / Intuos 等）やトラッ�
                            v                             v
 +----------------------------------------------------+  +---------------------------+
 |               GTK3 UI コア (flktux.ui)             |  | 物理キーリスナー          |
-|  - Gtk.EventBox セル群 (マルチデバイス対応)        |  | (flktux.numpad_listener)  |
+|  - Gtk.EventBox セル群 (ホバー予備入力 / 自由移動) |  | (flktux.numpad_listener)  |
 |  - 縁フレーム (2本指スクロール/1本指ドラッグ移動)  |  | - Xlib KeyGrab (NumLock連動)|
-|  - 磁気スナップ (ポインタ中央吸着 & 18pxディテント)|  +-------------+-------------+
-|  - ポインタ拘束 (XGrabPointer confine_to)          |                |
+|  - 初期点復帰デッドゾーン (18px不感帯判定)         |  +-------------+-------------+
+|  - 予測バー ＆ 入力文字列表示バー (Display Bar)    |                |
+|  - 手書きパッド (flktux.handwriting) 切替統合      |                |
 +--------------------------+-------------------------+                |
                            |                                          |
                            v                                          v
 +-----------------------------------------------------------------------------------+
-|                             レイアウト ＆ 状態マシン                              |
-|                                (flktux.layouts)                                   |
+|                             レイアウト ＆ 予測エンジン                            |
+|             (flktux.layouts / flktux.codepredict / flktux.handwriting)            |
 |   モード切替: [あ]かな ➔ [ア]カナ ➔ [A]英字 ➔ [1]数字 ➔ [↑]ナビゲーション(エクセル) |
+|   Linux/UNIXコマンド補完 (systemctl, apt, git, docker, パイプ, リダイレクト)     |
+|   多言語コード予測 (Python, Rust, Bash, JS, C++) / zinnia 日本語手書き認識        |
 |   トグル判定 (500msオートコミット) / 濁点・小文字変換 / Shiftラッチ状態管理       |
 +-----------------------------------------------------------------------------------+
                            |
@@ -45,7 +64,7 @@ FlickTux は、ペンタブレット（Wacom Bamboo / Intuos 等）やトラッ�
                            |
                            v
 +-----------------------------------------------------------------------------------+
-|               X11 ターゲットアプリケーション (Krita, Calc, ブラウザ, 端末 等)    |
+|               X11 ターゲットアプリケーション (Krita, Calc, 端末, VSCode 等)      |
 +-----------------------------------------------------------------------------------+
 ```
 
@@ -53,7 +72,9 @@ FlickTux は、ペンタブレット（Wacom Bamboo / Intuos 等）やトラッ�
 
 | モジュール | パス | 役割と責務 |
 |---|---|---|
-| **UI コア** | `flktux.ui` | フローティングウィンドウ、GTK3マルチデバイス受領、磁気スナップ、ポインタ拘束、縁ドラッグ移動、十字フリックガイド描画。 |
+| **UI コア** | `flktux.ui` | フローティングウィンドウ、GTK3マルチデバイス受領、ポインタ自由移動（拘束撤廃）、ホバー予備入力、表示バー、予測バー、手書き切替、十字フリックガイド描画。 |
+| **手書きパッド** | `flktux.handwriting` | 筆圧対応 cairo 描画キャンバス、Linux `zinnia-recognize` 連携手書き認識、自動クロップ透過PNG生成、`xclip` + `Ctrl+V` 手書き文字スタンプ配置。 |
+| **コード・コマンド予測** | `flktux.codepredict` | Ubuntu/Linux/UNIXシステムコマンド補完（パイプ/リダイレクト含む）、多言語コードスニペット（Python/Rust/Bash/JS/C++）、アクティブウィンドウ自動検知。 |
 | **レイアウト定義** | `flktux.layouts` | 5大配列（Google, Galaxy, iPhone, ガラケー, 10キー）および5大モード（かな, カナ, 英字, 数字, ナビ）のキー配置マトリックス。 |
 | **低遅延パイプ** | `flktux.xdo` | 常駐 `xdotool` プロセス管理。プロセス生成コストゼロ化、不可分（atomic）な文字置換。 |
 | **Wacom 制御** | `flktux.wacom` | Wacom ドライバ（`xsetwacom` / `xinput`）のリアルタイム制御、16:9比率補正、感度プロファイル管理。 |
@@ -249,10 +270,12 @@ type --delay 10 {char}
 │   └── flktux-settings            # 感度設定センター実行ファイル
 ├── flktux/
 │   ├── __init__.py
+│   ├── codepredict.py             # 【新設】Ubuntu/Linuxコマンド ＆ 多言語コード予測補完エンジン
+│   ├── handwriting.py             # 【新設】筆圧対応手書き描画キャンバス、zinnia認識、xclip透過配置
 │   ├── layouts.py                 # 5大配列 & 5大モード (かな/カナ/英字/数字/ナビ)
-│   ├── numpad_listener.py         # 物理テンキー (Xlib) リスナー
+│   ├── numpad_listener.py         # 物理テンキー (Xlib/evdev) リスナー
 │   ├── settings_gui.py            # GTK3 設定 GUI & リアルタイム試し書き広場
-│   ├── ui.py                      # GTK3 UI 本体 (EventBox, 磁気スナップ, 拘束, 縁移動)
+│   ├── ui.py                      # GTK3 UI 本体 (自由移動, ホバー予備入力, 表示バー, 予測バー, 手書き切替)
 │   ├── wacom.py                   # xsetwacom 制御 & 16:9 比率補正
 │   └── xdo.py                     # 常駐 xdotool パイプライン
 ├── assets/
@@ -261,7 +284,7 @@ type --delay 10 {char}
 ├── desktop/
 │   ├── flktux.desktop             # デスクトップランチャー
 │   └── flktux-settings.desktop    # 設定センターランチャー
-├── install.sh                     # 自動インストーラー
+├── install.sh                     # 自動インストーラー (xclip, zinnia-utils, tegaki-zinnia-japanese 自動導入)
 ├── README.md                      # プロジェクトドキュメント
 └── SPECIFICATION.md               # 本詳細技術仕様書
 ```
@@ -269,3 +292,74 @@ type --delay 10 {char}
 - **ユーザー設定ファイル:**
   - `~/.config/flktux/config.json`: ウィンドウ位置 $(x, y)$、アクティブレイアウト、入力モード、トグル確定時間。
   - `~/.config/flktux/wacom_settings.json`: 筆圧カーブ、閾値、手ブレ補正、16:9比率、タッチON/OFF。
+
+---
+
+## 7. 🔤 仮入力・文字列表示バー ＆ キーホバー予備入力仕様
+
+### 7.1 ポインタ拘束の完全撤廃 (自由移動)
+- 従来搭載されていた `_clamp_pointer`（30ms強制タイマーによる画面ワープ）およびセルタップ時の中心強制移動（`device.warp`）を完全撤廃。
+- ペン先やマウスカーソルが画面全体・他ウィンドウへシームレスに脱出・自由移動可能。
+
+### 7.2 仮入力・文字列表示スペース (Display Bar)
+- ヘッダー直下にスリムなプレビューバーを配置。
+- **2層テキストバッファ同期**:
+  - `committed_text`: 確定済み文字列（白文字ボールド表示）。
+  - `preedit_text` / `hover_tentative_char`: 仮入力中の文字（水色 `#8ab4f8` ＋ 単一下線表示）。
+- **クイックアクション**:
+  - `⌫` (BackSpace): 直前の1文字消去。
+  - `↵` (Return): エディタへEnter送信し表示スペースを確定クリア。
+  - `✕` (Clear): 表示スペースの全クリア。
+
+### 7.3 キーホバー時の予備的仮入力 ＆ 初期点復帰判定
+1. **ホバー予備仮入力 (`enter-notify-event`)**:
+   - キーの上にポインタが乗った瞬間に、代表文字（center文字: 「あ」「1」「a」等）を取得。
+   - エディタ側へ `XDO.type(center_char)`（または直前文字があれば `XDO.replace(center_char)`）を発行し、エディタおよびFlickTux表示スペースに予備配置。
+2. **初期点復帰デッドゾーン ($d \le 18\text{px}$)**:
+   - フリックドラッグ中、初期点から18px以上離れて方向が検出された後でも、指／ペンを初期点付近（18px以内）に戻せば、即座に中央文字（「あ」）へ自動置換（`replace`）。
+   - そのまま離せば中央文字として安全に文字確定（タップ扱い）。
+3. **離脱キャンセル (`leave-notify-event`)**:
+   - クリック（タップ）されずにキーボード領域外へ離脱した場合、70msタイマーでキャンセルを確定し、エディタに `BackSpace` を送信して仮文字を自動消去。
+
+---
+
+## 8. ✍️ 筆圧対応 手書き入力 ＆ 手書き文字配置パッド (Linuxツール再利用)
+
+### 8.1 手書きキーボード入力 (Linux `zinnia` / `tegaki-zinnia-japanese` 連携)
+- **Linux標準ツールの再利用**:
+  - 描画ストロークの $(x, y, \text{pressure})$ シーケンスを Linux標準の `zinnia-recognize`（`/usr/bin/zinnia-recognize`）に渡し、SVM学習モデル（`tegaki-zinnia-japanese`）で解析。
+  - 漢字・ひらがな・カタカナ・英数字・記号の上位候補文字（最大7件）をパッド上部の候補バーにボタン提示。
+  - 候補ボタンをタップすると `XDO.type(cand)` によりアクティブウィンドウへ文字コード入力。
+  - `zinnia` 未導入環境向けに、軽量幾何ストローク（数字・基本字形）フォールバックも内包。
+
+### 8.2 手書き文字の配置 (Linux `xclip` ＋ `Ctrl+V` 連携)
+- **手書き透過画像スタンプ配置**:
+  - 描画されたストロークの最小外接矩形（バウンディングボックス）を自動計算し、余白を自動クロップ。
+  - 背景透過の白色高精細PNG画像（`/tmp/flktux_handwriting.png`）を生成。
+  - Linux標準の `xclip` コマンド（`xclip -selection clipboard -t image/png`）でX11クリップボードへ直接流し込み。
+  - 不可分に `XDO.key("ctrl+v")` を発行し、Krita・GIMP・LibreOffice・エディタ等のキャンバス・画面上に手書き文字そのものをワンクリックでスタンプ配置。
+
+---
+
+## 9. 🐧 Ubuntu/Linuxコマンド ＆ 多言語コード特化 予測補完仕様
+
+### 9.1 Ubuntu / Linux / UNIX システムコマンド補完
+- ターミナル（GNOME Terminal, Tilix, Alacritty, Kitty, Xterm, bash/tmux 等）操作時、フリック打鍵数を極小化するコマンド辞書を標準内蔵。
+- **単一文字からの即時展開**:
+  - `s` ➔ `sudo`, `systemctl status`, `systemctl restart`, `ssh`, `sed`
+  - `g` ➔ `git status`, `git commit -m ""`, `git diff`, `git pull`, `grep -rnI "" .`
+  - `d` ➔ `docker ps`, `docker compose up -d`, `df -h`, `dpkg -i`
+  - `a` ➔ `sudo apt update && sudo apt upgrade -y`, `sudo apt install`, `awk`
+- **パイプ・リダイレクトのワンタップスニペット**:
+  - `| grep `, `| less`, `| head -n 20`, `| awk '{print $1}'`, `> /dev/null 2>&1`, `&& `
+
+### 9.2 多言語プログラミングコード予測
+- Python, Rust, Bash, JavaScript/TypeScript, C/C++ の構文・予約語・演算子スニペット（VS Code形式JSON互換）を搭載。
+- **スマートカッコ自動復帰**:
+  - `()` や `{}` や `""` などのペア記号を挿入した際、自動的に `xdotool` で `Left` キーを送信してカーソルをペアの内側へ復帰。
+
+### 9.3 アクティブウィンドウ自動検知と言語切替
+- バックグラウンドで `xdotool getactivewindow getwindowname` を定期監視。
+- 端末アプリにフォーカスがある時は自動的に **「🐧 Linuxコマンドモード」** に追従。
+- エディタアプリにフォーカスがある時は、開いているファイルの拡張子（`.py`, `.rs`, `.sh`, `.js`, `.c` 等）に応じて言語モードを自動切替。ヘッダーの言語セレクターからも手動切替可能。
+

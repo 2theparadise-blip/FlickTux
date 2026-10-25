@@ -33,6 +33,8 @@ try:
         DAKUTEN_MAP,
     )
     from .numpad_listener import NumpadListener
+    from .codepredict import CodePredictor, detect_active_window_mode
+    from .handwriting import HandwritingPadWidget
 except (ImportError, ValueError):
     from flktux.xdo import XDO
     from flktux.layouts import (
@@ -45,6 +47,8 @@ except (ImportError, ValueError):
         DAKUTEN_MAP,
     )
     from flktux.numpad_listener import NumpadListener
+    from flktux.codepredict import CodePredictor, detect_active_window_mode
+    from flktux.handwriting import HandwritingPadWidget
 
 try:
     from Xlib import X, display as xdisplay
@@ -52,8 +56,8 @@ try:
 except Exception:
     HAS_XLIB = False
 
+# Pointer confinement completely deprecated & removed
 def confine_pointer_to_xid(xid: int) -> bool:
-    # Deprecated XGrabPointer that stole clicks; confinement is now handled via smooth clamp!
     return True
 
 def ungrab_pointer():
@@ -69,18 +73,15 @@ window {
 }
 .edge-frame {
     background-color: #202124;
-    border: 3px solid #3c4043;
-    border-radius: 16px;
-    padding: 5px;
-}
-.edge-frame.confined {
-    border: 3px solid #8ab4f8;
+    border: 2px solid #3c4043;
+    border-radius: 14px;
+    padding: 4px;
 }
 .header-bar {
     background-color: #282a2d;
-    padding: 3px 6px;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+    padding: 2px 6px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
 }
 .tab-btn {
     background-color: #35373a;
@@ -106,19 +107,19 @@ window {
     font-weight: bold;
     margin-right: 3px;
 }
-.layout-combo {
+.layout-combo, .lang-combo {
     background-color: #2b2c2f;
     color: #8ab4f8;
     border: 1px solid #5f6368;
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: bold;
 }
-.layout-combo button {
+.layout-combo button, .lang-combo button {
     background: transparent;
     border: none;
     color: #e8eaed;
-    font-size: 11px;
+    font-size: 10px;
 }
 .icon-btn {
     background: transparent;
@@ -130,6 +131,19 @@ window {
 .icon-btn:hover {
     color: #8ab4f8;
 }
+.toggle-mode-btn {
+    background-color: #35373a;
+    color: #8ab4f8;
+    border: 1px solid #5f6368;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 1px 6px;
+}
+.toggle-mode-btn:hover {
+    background-color: #8ab4f8;
+    color: #202124;
+}
 .close-btn {
     background: transparent;
     border: none;
@@ -140,14 +154,63 @@ window {
 .close-btn:hover {
     color: #f28b82;
 }
+
+/* ================= Prediction Strip ================= */
+.pred-strip-box {
+    background-color: #252629;
+    padding: 1px 4px;
+    border-radius: 6px;
+    margin: 2px 4px 1px 4px;
+}
+.pred-btn {
+    background-color: #303134;
+    color: #a8c7fa;
+    border: 1px solid #484b50;
+    border-radius: 5px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-family: monospace;
+    font-weight: bold;
+    margin: 1px 2px;
+}
+.pred-btn:hover {
+    background-color: #8ab4f8;
+    color: #202124;
+}
+
+/* ================= Text Display Bar ================= */
+.display-bar {
+    background-color: #17181a;
+    border: 1px solid #3c4043;
+    border-radius: 7px;
+    padding: 3px 6px;
+    margin: 1px 4px 2px 4px;
+}
+.display-text {
+    font-size: 12px;
+    font-family: sans-serif;
+}
+.display-action-btn {
+    background: transparent;
+    border: none;
+    color: #9aa0a6;
+    font-size: 11px;
+    padding: 0 4px;
+}
+.display-action-btn:hover {
+    color: #ffffff;
+}
+
+/* ================= Key Cells & Hover ================= */
 .key-cell {
     background-color: #303134;
     border-radius: 7px;
     margin: 2px;
     border: 1px solid #3c4043;
 }
-.key-cell:hover {
+.key-cell:hover, .key-cell.key-hovered {
     background-color: #383a3d;
+    border: 1px solid #8ab4f8;
 }
 .key-cell:active, .key-cell.key-pressed {
     background-color: #8ab4f8;
@@ -158,8 +221,9 @@ window {
     margin: 2px;
     border: 1px solid #4a4d52;
 }
-.action-cell:hover {
+.action-cell:hover, .action-cell.key-hovered {
     background-color: #484b50;
+    border: 1px solid #a8c7fa;
 }
 .enter-cell {
     background-color: #8ab4f8;
@@ -169,6 +233,54 @@ window {
 }
 .enter-cell:hover {
     background-color: #aecbfa;
+}
+
+/* ================= Handwriting Pad UI ================= */
+.handwriting-cand-bar {
+    background-color: #252629;
+    padding: 2px 4px;
+    border-radius: 6px;
+}
+.cand-btn {
+    background-color: #303134;
+    color: #ffffff;
+    border: 1px solid #5f6368;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 13px;
+    font-weight: bold;
+}
+.cand-btn:hover {
+    background-color: #8ab4f8;
+    color: #202124;
+}
+.cand-hint-label {
+    color: #9aa0a6;
+    font-size: 10px;
+}
+.stamp-btn {
+    background-color: #1e8e3e;
+    color: #ffffff;
+    border: 1px solid #34a853;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+}
+.stamp-btn:hover {
+    background-color: #34a853;
+}
+.tool-btn {
+    background-color: #35373a;
+    color: #e8eaed;
+    border: 1px solid #484b50;
+    border-radius: 6px;
+    font-size: 10px;
+    padding: 3px 6px;
+}
+.tool-btn:hover {
+    background-color: #484b50;
+    color: #ffffff;
 }
 """
 
@@ -303,10 +415,20 @@ class FlickTuxWindow(Gtk.Window):
         self.tab_buttons = {}
         self.current_matrix = []
 
-        # Modifiers & Confinement State
+        # Text Buffer State (Display Bar synchronization)
+        self.committed_text = ""
+        self.preedit_text = ""
+        self.hover_tentative_char = ""
+        self.hover_cell_widget = None
+        self.hover_cancel_timer_id = None
+
+        # Code & Linux Command Predictor
+        self.predictor = CodePredictor(mode="linux")
+        self.is_handwriting_mode = False
+
+        # Modifiers State
         self.is_shift_latched = False
         self.is_ctrl_latched = False
-        self.is_confined = True
 
         # Toggle state
         self.toggle_key = None
@@ -320,11 +442,9 @@ class FlickTuxWindow(Gtk.Window):
             exclusive_grab=self.numpad_exclusive
         )
 
-        # Outer Edge Frame for 1-finger / 2-finger drag movement
+        # Outer Edge Frame for 1-finger / 2-finger drag movement (Free moving, NO confinement)
         self.edge_frame = Gtk.EventBox()
         self.edge_frame.get_style_context().add_class("edge-frame")
-        if self.is_confined:
-            self.edge_frame.get_style_context().add_class("confined")
         self.edge_frame.add_events(
             Gdk.EventMask.BUTTON_PRESS_MASK
             | Gdk.EventMask.SCROLL_MASK
@@ -338,51 +458,58 @@ class FlickTuxWindow(Gtk.Window):
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.edge_frame.add(main_box)
 
-        # 1. Header Bar
+        # ==================== 1. Header Bar ====================
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         header.get_style_context().add_class("header-bar")
         header.connect("button-press-event", self.on_header_press)
 
-        # Unified Layout Selector (Single button / dropdown)
+        # Unified Layout Selector
         self.layout_combo = Gtk.ComboBoxText()
         self.layout_combo.get_style_context().add_class("layout-combo")
         self.layout_combo.set_can_focus(False)
 
-        # Standard Presets
         self.layout_options = [
-            ("Google", "⌨ Google (Gboard 20キー)"),
-            ("iPhone", "⌨ iPhone (iOS 19キー)"),
-            ("Galaxy", "⌨ Galaxy (Samsung 20キー)"),
-            ("10キー", "⌨ 10キー (電卓式 20キー)"),
-            ("プッシュボタン", "⌨ プッシュボタン (電話式 12キー)"),
-            ("ガラケー", "⌨ ガラケー (連打トグル 20キー)"),
+            ("Google", "⌨ Google"),
+            ("iPhone", "⌨ iPhone"),
+            ("Galaxy", "⌨ Galaxy"),
+            ("10キー", "⌨ 10キー"),
+            ("プッシュボタン", "⌨ プッシュ"),
+            ("ガラケー", "⌨ ガラケー"),
         ]
 
-        # Scan user custom keymaps
         custom_dir = os.path.expanduser("~/.config/flktux/custom")
         if os.path.isdir(custom_dir):
             for fname in sorted(os.listdir(custom_dir)):
                 if fname.endswith(".json"):
                     cid = os.path.splitext(fname)[0]
-                    self.layout_options.append((cid, f"★ {cid} (カスタム)"))
+                    self.layout_options.append((cid, f"★ {cid}"))
 
         for lid, label in self.layout_options:
             self.layout_combo.append(lid, label)
 
-        # Set initial selection
         active_lid = self.current_layout_name if self.current_layout_name in [x[0] for x in self.layout_options] else "Google"
         self.layout_combo.set_active_id(active_lid)
         self.layout_combo.connect("changed", self.on_layout_combo_changed)
-        header.pack_start(self.layout_combo, False, False, 2)
+        header.pack_start(self.layout_combo, False, False, 1)
+
+        # Code / Linux Command Language Selector
+        self.lang_combo = Gtk.ComboBoxText()
+        self.lang_combo.get_style_context().add_class("lang-combo")
+        self.lang_combo.set_can_focus(False)
+        for mid, mlabel in self.predictor.get_available_modes():
+            self.lang_combo.append(mid, mlabel)
+        self.lang_combo.set_active_id(self.predictor.mode)
+        self.lang_combo.connect("changed", self.on_lang_combo_changed)
+        header.pack_start(self.lang_combo, False, False, 1)
 
         header.pack_start(Gtk.Label(label=""), True, True, 0)  # Spacer
 
-        # Confine toggle button
-        self.confine_btn = Gtk.Button(label="🔒" if self.is_confined else "🔓")
-        self.confine_btn.get_style_context().add_class("icon-btn")
-        self.confine_btn.set_tooltip_text("ポインタ拘束の切替 (ON: キーボード内に拘束 / OFF: 自由移動)")
-        self.confine_btn.connect("clicked", self.on_toggle_confine)
-        header.pack_end(self.confine_btn, False, False, 1)
+        # Handwriting / Keyboard Toggle Button
+        self.handwriting_btn = Gtk.Button(label="✍ 手書き")
+        self.handwriting_btn.get_style_context().add_class("toggle-mode-btn")
+        self.handwriting_btn.set_tooltip_text("手書きパッドとキーボードを切り替え")
+        self.handwriting_btn.connect("clicked", self.on_toggle_handwriting_mode)
+        header.pack_end(self.handwriting_btn, False, False, 1)
 
         # Settings button
         settings_btn = Gtk.Button(label="⚙")
@@ -399,10 +526,58 @@ class FlickTuxWindow(Gtk.Window):
 
         main_box.pack_start(header, False, False, 0)
 
-        # 2. Main Keyboard Grid in Overlay
-        self.overlay = Gtk.Overlay()
-        main_box.pack_start(self.overlay, True, True, 4)
+        # ==================== 2. Code / Linux Command Prediction Strip ====================
+        self.pred_scroll = Gtk.ScrolledWindow()
+        self.pred_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        self.pred_scroll.set_min_content_height(26)
+        self.pred_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self.pred_box.get_style_context().add_class("pred-strip-box")
+        self.pred_scroll.add(self.pred_box)
+        main_box.pack_start(self.pred_scroll, False, False, 1)
 
+        # ==================== 3. Input String & Preedit Display Bar ====================
+        self.display_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        self.display_bar.get_style_context().add_class("display-bar")
+
+        self.display_icon = Gtk.Label(label="🔤")
+        self.display_bar.pack_start(self.display_icon, False, False, 2)
+
+        self.display_label = Gtk.Label()
+        self.display_label.set_use_markup(True)
+        self.display_label.set_alignment(0.0, 0.5)
+        self.display_label.set_ellipsize(Pango.EllipsizeMode.START)
+        self.display_label.get_style_context().add_class("display-text")
+        self.display_bar.pack_start(self.display_label, True, True, 2)
+
+        # Backspace quick button in display bar
+        btn_bs = Gtk.Button(label="⌫")
+        btn_bs.get_style_context().add_class("display-action-btn")
+        btn_bs.set_tooltip_text("1文字消去")
+        btn_bs.connect("clicked", lambda w: self.handle_action("backspace"))
+        self.display_bar.pack_end(btn_bs, False, False, 0)
+
+        # Commit (Return) quick button in display bar
+        btn_enter = Gtk.Button(label="↵")
+        btn_enter.get_style_context().add_class("display-action-btn")
+        btn_enter.set_tooltip_text("確定 (Enter)")
+        btn_enter.connect("clicked", lambda w: self.handle_action("enter"))
+        self.display_bar.pack_end(btn_enter, False, False, 0)
+
+        # Clear display quick button
+        btn_clear = Gtk.Button(label="✕")
+        btn_clear.get_style_context().add_class("display-action-btn")
+        btn_clear.set_tooltip_text("表示クリア")
+        btn_clear.connect("clicked", self.on_clear_display_clicked)
+        self.display_bar.pack_end(btn_clear, False, False, 0)
+
+        main_box.pack_start(self.display_bar, False, False, 1)
+
+        # ==================== 4. Main Body: Keyboard or Handwriting ====================
+        self.body_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        main_box.pack_start(self.body_container, True, True, 0)
+
+        # 4A. Keyboard Overlay
+        self.overlay = Gtk.Overlay()
         self.grid = Gtk.Grid()
         self.grid.set_row_homogeneous(True)
         self.grid.set_column_homogeneous(True)
@@ -416,6 +591,13 @@ class FlickTuxWindow(Gtk.Window):
         self.overlay.add_overlay(self.flick_guide)
         self.overlay.set_overlay_pass_through(self.flick_guide, True)
 
+        self.body_container.pack_start(self.overlay, True, True, 0)
+
+        # 4B. Handwriting Pad Composite Widget
+        self.handwriting_pad = HandwritingPadWidget(on_text_input=self.on_handwriting_input)
+        self.handwriting_pad.set_no_show_all(True)
+        self.body_container.pack_start(self.handwriting_pad, True, True, 0)
+
         # Apply CSS
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data(CSS_STYLE)
@@ -427,8 +609,10 @@ class FlickTuxWindow(Gtk.Window):
 
         self.rebuild_keys()
         self.update_tab_styles()
+        self.update_display_bar()
+        self.update_prediction_strip("")
 
-        self.set_default_size(360, 270)
+        self.set_default_size(360, 290)
         if self.saved_pos:
             self.move(*self.saved_pos)
         else:
@@ -436,71 +620,106 @@ class FlickTuxWindow(Gtk.Window):
 
         self._pos_save_id = None
         self.connect("configure-event", self.on_configure)
-        self.connect("map-event", self.on_window_map)
-        self.connect("unmap-event", self.on_window_unmap)
         self.connect("destroy", self.on_window_destroy)
 
         if self.current_layout_name == "10キー":
             self.numpad_listener.start()
 
-    def on_window_map(self, widget, event):
-        if self.is_confined:
-            GLib.timeout_add(100, self._apply_confine)
-        return False
-
-    def on_window_unmap(self, widget, event):
-        ungrab_pointer()
-        return False
+        # Background window auto-detector (every 2.5s)
+        GLib.timeout_add(2500, self._auto_detect_window_mode)
 
     def on_window_destroy(self, widget):
-        ungrab_pointer()
+        self._cancel_hover_timer()
+        self._cancel_toggle_timer()
 
-    def _apply_confine(self):
-        if not self.is_confined or not self.get_visible():
-            if getattr(self, '_clamp_timer_id', None):
-                GLib.source_remove(self._clamp_timer_id)
-                self._clamp_timer_id = None
-            return False
-        if not getattr(self, '_clamp_timer_id', None):
-            self._clamp_timer_id = GLib.timeout_add(30, self._clamp_pointer)
-        return False
-
-    def _clamp_pointer(self):
-        if not self.is_confined or not self.get_visible():
-            self._clamp_timer_id = None
-            return False
-        try:
-            gdk_win = self.get_window()
-            if gdk_win:
-                origin = gdk_win.get_origin()
-                ox, oy = (origin[1], origin[2]) if len(origin) == 3 else origin
-                w, h = gdk_win.get_width(), gdk_win.get_height()
-                seat = gdk_win.get_display().get_default_seat()
-                device = seat.get_pointer()
-                screen, px, py = device.get_position()
-                margin = 3
-                clamp_x = max(ox + margin, min(ox + w - margin, px))
-                clamp_y = max(oy + margin, min(oy + h - margin, py))
-                if px != clamp_x or py != clamp_y:
-                    device.warp(screen, clamp_x, clamp_y)
-        except Exception:
-            pass
+    def _auto_detect_window_mode(self):
+        """アクティブウィンドウに応じてコマンド/言語モードを自動追従"""
+        detected = detect_active_window_mode()
+        if detected != self.predictor.mode:
+            self.predictor.set_mode(detected)
+            self.lang_combo.set_active_id(detected)
+            self.update_prediction_strip(self.hover_tentative_char or self.preedit_text)
         return True
 
-    def on_toggle_confine(self, btn):
-        self.is_confined = not self.is_confined
-        ctx = self.edge_frame.get_style_context()
-        if self.is_confined:
-            self.confine_btn.set_label("🔒")
-            ctx.add_class("confined")
-            self._apply_confine()
+    def on_lang_combo_changed(self, combo):
+        active_id = combo.get_active_id()
+        if active_id:
+            self.predictor.set_mode(active_id)
+            self.update_prediction_strip(self.hover_tentative_char or self.preedit_text)
+
+    def on_toggle_handwriting_mode(self, btn):
+        self.is_handwriting_mode = not self.is_handwriting_mode
+        if self.is_handwriting_mode:
+            self.overlay.hide()
+            self.handwriting_pad.show_all()
+            self.handwriting_btn.set_label("⌨ キー")
+            self.display_icon.set_text("✍")
         else:
-            self.confine_btn.set_label("🔓")
-            ctx.remove_class("confined")
-            if getattr(self, '_clamp_timer_id', None):
-                GLib.source_remove(self._clamp_timer_id)
-                self._clamp_timer_id = None
-        ungrab_pointer()
+            self.handwriting_pad.hide()
+            self.overlay.show()
+            self.handwriting_btn.set_label("✍ 手書き")
+            self.display_icon.set_text("🔤")
+
+    def on_handwriting_input(self, text: str):
+        self.commit_toggle()
+        self.type_char(text)
+        self.committed_text += text
+        self.update_display_bar()
+        self.update_prediction_strip("")
+
+    def on_clear_display_clicked(self, btn):
+        self.committed_text = ""
+        self.preedit_text = ""
+        self.hover_tentative_char = ""
+        self.update_display_bar()
+        self.update_prediction_strip("")
+
+    def update_display_bar(self):
+        """表示スペースの描画更新 (確定テキスト＋下線付き仮入力テキスト)"""
+        comm = GLib.markup_escape_text(self.committed_text[-25:] if len(self.committed_text) > 25 else self.committed_text)
+        pre = GLib.markup_escape_text(self.preedit_text or self.hover_tentative_char)
+
+        if not comm and not pre:
+            self.display_label.set_markup("<span color='#5f6368'>文字またはコマンドを入力...</span>")
+        else:
+            markup = f"<span color='#ffffff' weight='bold'>{comm}</span>"
+            if pre:
+                markup += f"<span color='#8ab4f8' underline='single' weight='bold'> {pre}</span>"
+            self.display_label.set_markup(markup)
+
+    def update_prediction_strip(self, prefix: str):
+        """コード／Linuxコマンド予測候補バーの更新"""
+        for child in self.pred_box.get_children():
+            self.pred_box.remove(child)
+
+        candidates = self.predictor.predict(prefix, max_results=8)
+        for label, insert_text, back_steps in candidates:
+            btn = Gtk.Button(label=label)
+            btn.get_style_context().add_class("pred-btn")
+            btn.connect("clicked", self.on_prediction_clicked, insert_text, back_steps)
+            self.pred_box.pack_start(btn, False, False, 1)
+
+        self.pred_box.show_all()
+
+    def on_prediction_clicked(self, btn, insert_text: str, back_steps: int):
+        """予測候補をタップしてエディタへスマート挿入"""
+        # 直前にホバー予備文字があれば取り消す
+        if self.hover_tentative_char:
+            XDO.key("BackSpace")
+            self.hover_tentative_char = ""
+
+        self.commit_toggle()
+        XDO.type(insert_text)
+
+        # カッコ等の自動復帰
+        if back_steps > 0:
+            for _ in range(back_steps):
+                XDO.key("Left")
+
+        self.committed_text += insert_text.strip()
+        self.preedit_text = ""
+        self.update_display_bar()
+        self.update_prediction_strip("")
 
     def on_edge_press(self, widget, event):
         if event.button == 1:
@@ -667,7 +886,7 @@ class FlickTuxWindow(Gtk.Window):
         self.grid.show_all()
 
     def snap_pointer_to_cell_center(self, widget, event):
-        """セルの中央座標を計算し、ポインタを磁気スナップ＆フリック起点を中央に固定"""
+        """セルの中央座標を計算 (ポインタは一切強制移動せず、自由な移動を維持)"""
         try:
             alloc = widget.get_allocation()
             win = widget.get_window()
@@ -675,17 +894,61 @@ class FlickTuxWindow(Gtk.Window):
                 origin_x, origin_y = win.get_root_coords(alloc.x, alloc.y)
                 center_x = origin_x + alloc.width // 2
                 center_y = origin_y + alloc.height // 2
-
-                # Magnetic Pointer Warp
-                screen = widget.get_screen()
-                display = screen.get_display()
-                device = event.get_device() or display.get_device_manager().get_client_pointer()
-                if device:
-                    device.warp(screen, center_x, center_y)
                 return (center_x, center_y)
         except Exception:
             pass
         return (int(event.x_root), int(event.y_root))
+
+    def _cancel_hover_timer(self):
+        if getattr(self, 'hover_cancel_timer_id', None) is not None:
+            try:
+                GLib.source_remove(self.hover_cancel_timer_id)
+            except Exception:
+                pass
+            self.hover_cancel_timer_id = None
+
+    def _on_hover_cancel_timeout(self):
+        """キーボード領域外へ離脱した時のホバー予備仮入力自動キャンセル"""
+        self.hover_cancel_timer_id = None
+        if self.hover_tentative_char and not self.drag_start:
+            XDO.key("BackSpace")
+            self.hover_tentative_char = ""
+            self.preedit_text = ""
+            self.update_display_bar()
+        return False
+
+    def on_cell_enter(self, widget, event, info):
+        """キーにポインタが乗った瞬間に予備的仮入力を開始"""
+        self._cancel_hover_timer()
+        widget.get_style_context().add_class("key-hovered")
+        self.hover_cell_widget = widget
+
+        if self.drag_start:
+            return False
+
+        if info["type"] == "flick":
+            key_name = info["key"]
+            flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
+            center_char = flick_data.get('center', key_name) if flick_data else key_name
+            if center_char:
+                if self.hover_tentative_char and self.hover_tentative_char != center_char:
+                    XDO.replace(center_char)
+                elif not self.hover_tentative_char:
+                    XDO.type(center_char)
+                self.hover_tentative_char = center_char
+                self.preedit_text = center_char
+                self.update_display_bar()
+                self.update_prediction_strip(center_char)
+        return False
+
+    def on_cell_leave(self, widget, event, info):
+        """キーから離脱した時の処理"""
+        widget.get_style_context().remove_class("key-hovered")
+        if not self.drag_start and self.hover_tentative_char:
+            self._cancel_hover_timer()
+            # 70ms 内に別キーに乗らなければキャンセル消去
+            self.hover_cancel_timer_id = GLib.timeout_add(70, self._on_hover_cancel_timeout)
+        return False
 
     def create_cell_widget(self, info):
         box = Gtk.EventBox()
@@ -699,6 +962,8 @@ class FlickTuxWindow(Gtk.Window):
             | Gdk.EventMask.TOUCH_MASK
         )
 
+        box.connect("enter-notify-event", self.on_cell_enter, info)
+        box.connect("leave-notify-event", self.on_cell_leave, info)
         box.connect("button-press-event", self.on_cell_press, info)
         box.connect("motion-notify-event", self.on_cell_motion, info)
         box.connect("button-release-event", self.on_cell_release, info)
@@ -739,7 +1004,7 @@ class FlickTuxWindow(Gtk.Window):
         if event.button not in (1, 3):
             return True
 
-        # Snap pointer to geometric center for magnetic crisp touch feel!
+        self._cancel_hover_timer()
         center_coords = self.snap_pointer_to_cell_center(widget, event)
         self.drag_start = center_coords
         self.active_cell = info
@@ -767,7 +1032,7 @@ class FlickTuxWindow(Gtk.Window):
         dy = event.y_root - self.drag_start[1]
         dist = math.hypot(dx, dy)
 
-        threshold = 18  # 18px detent threshold for crisp snapping
+        threshold = 18  # 18px detent threshold
         if dist > threshold:
             angle = math.degrees(math.atan2(dy, dx))
             if -45 <= angle <= 45:
@@ -791,6 +1056,15 @@ class FlickTuxWindow(Gtk.Window):
                 cy = alloc.y + alloc.height / 2
                 self.flick_guide.show_guide(cx, cy, flick_data, direction)
 
+                # リアルタイム仮入力文字置換 (初期点復帰デッドゾーン対応)
+                target_char = flick_data.get(direction, '') if flick_data else key_name
+                if target_char and target_char != self.hover_tentative_char:
+                    XDO.replace(target_char)
+                    self.hover_tentative_char = target_char
+                    self.preedit_text = target_char
+                    self.update_display_bar()
+                    self.update_prediction_strip(target_char)
+
         return True
 
     def on_cell_release(self, widget, event, info):
@@ -807,7 +1081,6 @@ class FlickTuxWindow(Gtk.Window):
             key_name = info["key"]
             flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
 
-            # button != 1 (2本指タップ/右クリック等) による勝手な誤字入力を防止
             if button != 1:
                 self.commit_toggle()
             else:
@@ -815,7 +1088,13 @@ class FlickTuxWindow(Gtk.Window):
                     self.commit_toggle()
                     char = flick_data.get(flick_dir, '') if flick_data else ''
                     if char:
-                        self.type_char(char)
+                        # 既に on_cell_motion で置換送信済みなので確定登録
+                        self.committed_text += char
+                        self.preedit_text = ""
+                        self.hover_tentative_char = ""
+                        self.last_char = char
+                        self.update_display_bar()
+                        self.update_prediction_strip(char)
                 else:
                     self.handle_flick_tap(key_name, flick_data)
         else:
@@ -837,7 +1116,7 @@ class FlickTuxWindow(Gtk.Window):
                 self.handle_action(cell_info.get("action"))
 
     def _cancel_toggle_timer(self):
-        if self.toggle_timer_id is not None:
+        if getattr(self, 'toggle_timer_id', None) is not None:
             try:
                 GLib.source_remove(self.toggle_timer_id)
             except Exception:
@@ -854,6 +1133,11 @@ class FlickTuxWindow(Gtk.Window):
 
     def commit_toggle(self):
         self._cancel_toggle_timer()
+        if self.preedit_text:
+            self.committed_text += self.preedit_text
+            self.preedit_text = ""
+            self.hover_tentative_char = ""
+            self.update_display_bar()
         self.toggle_key = None
         self.toggle_index = 0
 
@@ -864,11 +1148,15 @@ class FlickTuxWindow(Gtk.Window):
     def handle_flick_tap(self, key_name, flick_data):
         cycle = TOGGLE_CYCLES.get(key_name)
         if cycle:
-            if self.toggle_key == key_name and self.toggle_timer_id is not None:
+            if self.toggle_key == key_name and getattr(self, 'toggle_timer_id', None) is not None:
                 self._cancel_toggle_timer()
                 self.toggle_index = (self.toggle_index + 1) % len(cycle)
                 char = cycle[self.toggle_index]
                 self.replace_last_char(char)
+                self.preedit_text = char
+                self.hover_tentative_char = char
+                self.update_display_bar()
+                self.update_prediction_strip(char)
                 self._start_toggle_timer()
                 return
             else:
@@ -876,30 +1164,63 @@ class FlickTuxWindow(Gtk.Window):
                 self.toggle_key = key_name
                 self.toggle_index = 0
                 char = cycle[0]
-                self.type_char(char)
+                if not self.hover_tentative_char:
+                    self.type_char(char)
+                else:
+                    self.last_char = char
+                self.preedit_text = char
+                self.hover_tentative_char = char
+                self.update_display_bar()
+                self.update_prediction_strip(char)
                 self._start_toggle_timer()
                 return
 
         self.commit_toggle()
         char = flick_data.get('center', key_name) if flick_data else key_name
-        self.type_char(char)
+        if not self.hover_tentative_char:
+            self.type_char(char)
+        else:
+            self.last_char = char
+        self.committed_text += char
+        self.preedit_text = ""
+        self.hover_tentative_char = ""
+        self.update_display_bar()
+        self.update_prediction_strip(char)
 
     def handle_action(self, action):
         self.commit_toggle()
         if action == "backspace":
             self.last_char = ""
             XDO.key("BackSpace")
+            if self.preedit_text or self.hover_tentative_char:
+                self.preedit_text = ""
+                self.hover_tentative_char = ""
+            elif self.committed_text:
+                self.committed_text = self.committed_text[:-1]
+            self.update_display_bar()
+            self.update_prediction_strip("")
         elif action == "next":
+            self.commit_toggle()
             XDO.key("Right")
         elif action == "space":
-            self.last_char = ""
+            self.commit_toggle()
+            self.last_char = " "
             XDO.key("space")
+            self.committed_text += " "
+            self.update_display_bar()
         elif action == "convert":
+            self.commit_toggle()
             self.last_char = ""
             XDO.key("space")
         elif action == "enter":
+            self.commit_toggle()
             self.last_char = ""
             XDO.key("Return")
+            self.committed_text = ""
+            self.preedit_text = ""
+            self.hover_tentative_char = ""
+            self.update_display_bar()
+            self.update_prediction_strip("")
         elif action == "left":
             prefix = "Shift+" if self.is_shift_latched else ""
             XDO.key(f"{prefix}Left")
