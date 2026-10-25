@@ -16,10 +16,11 @@ if PKG_ROOT not in sys.path:
 import json
 import math
 import subprocess
+import cairo
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, Pango, cairo
+from gi.repository import Gtk, Gdk, GLib, Pango
 
 try:
     from .xdo import XDO
@@ -290,7 +291,10 @@ class FlickOverlay(Gtk.DrawingArea):
 
     def __init__(self):
         super().__init__()
-        self.set_no_show_all(True)
+        self.set_halign(Gtk.Align.FILL)
+        self.set_valign(Gtk.Align.FILL)
+        self.set_hexpand(True)
+        self.set_vexpand(True)
         self.connect("draw", self.on_draw)
         self.active_data = None
         self.center_x = 0
@@ -306,8 +310,9 @@ class FlickOverlay(Gtk.DrawingArea):
         self.queue_draw()
 
     def hide_guide(self):
-        self.active_data = None
-        self.hide()
+        if self.active_data is not None:
+            self.active_data = None
+            self.queue_draw()
 
     def on_draw(self, widget, cr):
         if not self.active_data:
@@ -967,6 +972,7 @@ class FlickTuxWindow(Gtk.Window):
         box.connect("button-press-event", self.on_cell_press, info)
         box.connect("motion-notify-event", self.on_cell_motion, info)
         box.connect("button-release-event", self.on_cell_release, info)
+        box.connect("touch-event", self.on_cell_touch, info)
 
         lbl = Gtk.Label()
         lbl.set_use_markup(True)
@@ -1000,6 +1006,35 @@ class FlickTuxWindow(Gtk.Window):
         box.add(lbl)
         return box
 
+    def _calc_guide_center(self, widget):
+        alloc = widget.get_allocation()
+        coords = widget.translate_coordinates(self.flick_guide, alloc.width // 2, alloc.height // 2)
+        if coords is not None:
+            return coords[0], coords[1]
+        coords = widget.translate_coordinates(self.overlay, alloc.width // 2, alloc.height // 2)
+        if coords is not None:
+            return coords[0], coords[1]
+        return alloc.x + alloc.width // 2, alloc.y + alloc.height // 2
+
+    def on_cell_touch(self, widget, event, info):
+        touch_type = event.touch.type
+        if touch_type == Gdk.EventType.TOUCH_BEGIN:
+            class FakeEvent:
+                button = 1
+                x_root = event.touch.x_root
+                y_root = event.touch.y_root
+            return self.on_cell_press(widget, FakeEvent(), info)
+        elif touch_type == Gdk.EventType.TOUCH_UPDATE:
+            class FakeEvent:
+                x_root = event.touch.x_root
+                y_root = event.touch.y_root
+            return self.on_cell_motion(widget, FakeEvent(), info)
+        elif touch_type in (Gdk.EventType.TOUCH_END, Gdk.EventType.TOUCH_CANCEL):
+            class FakeEvent:
+                pass
+            return self.on_cell_release(widget, FakeEvent(), info)
+        return False
+
     def on_cell_press(self, widget, event, info):
         if event.button not in (1, 3):
             return True
@@ -1015,11 +1050,7 @@ class FlickTuxWindow(Gtk.Window):
         if info["type"] == "flick":
             key_name = info["key"]
             flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
-            alloc = widget.get_allocation()
-            origin = self.get_window().get_origin()
-            ox, oy = (origin[1], origin[2]) if len(origin) == 3 else origin
-            cx = alloc.x + alloc.width / 2
-            cy = alloc.y + alloc.height / 2
+            cx, cy = self._calc_guide_center(widget)
             self.flick_guide.show_guide(cx, cy, flick_data, 'center')
 
         return True
@@ -1051,9 +1082,7 @@ class FlickTuxWindow(Gtk.Window):
             if info["type"] == "flick":
                 key_name = info["key"]
                 flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
-                alloc = widget.get_allocation()
-                cx = alloc.x + alloc.width / 2
-                cy = alloc.y + alloc.height / 2
+                cx, cy = self._calc_guide_center(widget)
                 self.flick_guide.show_guide(cx, cy, flick_data, direction)
 
                 # リアルタイム仮入力文字置換 (初期点復帰デッドゾーン対応)
