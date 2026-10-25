@@ -21,6 +21,93 @@ from typing import List, Tuple, Dict, Optional
 # (display_label, insert_text, cursor_back_steps)
 # cursor_back_steps: 挿入後にカーソルを左に戻す文字数 (例: () の場合 1)
 
+GENERAL_SNIPPETS: List[Tuple[str, str, int]] = [
+    # 挨拶・返答
+    ("お疲れ様です", "お疲れ様です", 0),
+    ("ありがとうございます", "ありがとうございます", 0),
+    ("よろしくお願いします", "よろしくお願いします", 0),
+    ("こんにちは", "こんにちは", 0),
+    ("了解しました", "了解しました", 0),
+    ("承知いたしました", "承知いたしました", 0),
+    ("確認します", "確認します", 0),
+    ("助かりました", "助かりました", 0),
+    ("問題ありません", "問題ありません", 0),
+    ("大丈夫です", "大丈夫です", 0),
+    ("失礼します", "失礼します", 0),
+    ("すみません", "すみません", 0),
+    ("ごめんなさい", "ごめんなさい", 0),
+    ("どういたしまして", "どういたしまして", 0),
+    ("なるほど", "なるほど", 0),
+    ("確かに", "確かに", 0),
+    # 記号・感嘆
+    ("！？", "！？", 0),
+    ("…", "…", 0),
+    ("〜", "〜", 0),
+    ("（笑）", "（笑）", 0),
+    ("（汗）", "（汗）", 0),
+]
+
+BUSINESS_SNIPPETS: List[Tuple[str, str, int]] = [
+    # 書き出し・挨拶
+    ("いつもお世話になっております。", "いつもお世話になっております。", 0),
+    ("平素は格別のご高配を賜り厚く御礼申し上げます。", "平素は格別のご高配を賜り厚く御礼申し上げます。", 0),
+    ("お疲れ様です。", "お疲れ様です。", 0),
+    ("ご無沙汰しております。", "ご無沙汰しております。", 0),
+    ("突然のご連絡にて失礼いたします。", "突然のご連絡にて失礼いたします。", 0),
+    ("拝啓", "拝啓\n\n", 0),
+    # 依頼・確認・検討
+    ("ご確認いただけますと幸いです。", "ご確認いただけますと幸いです。", 0),
+    ("ご査収のほどよろしくお願い申し上げます。", "ご査収のほどよろしくお願い申し上げます。", 0),
+    ("ご教示いただけますでしょうか。", "ご教示いただけますでしょうか。", 0),
+    ("ご検討のほどよろしくお願いいたします。", "ご検討のほどよろしくお願いいたします。", 0),
+    ("ご対応のほどお願い申し上げます。", "ご対応のほどお願い申し上げます。", 0),
+    ("何卒よろしくお願い申し上げます。", "何卒よろしくお願い申し上げます。", 0),
+    # 連絡・お詫び
+    ("取り急ぎご連絡申し上げます。", "取り急ぎご連絡申し上げます。", 0),
+    ("取り急ぎご報告まで。", "取り急ぎご報告まで。", 0),
+    ("ご不便をおかけして申し訳ございません。", "ご不便をおかけして申し訳ございません。", 0),
+    ("ご迷惑をおかけし深くお詫び申し上げます。", "ご迷惑をおかけし深くお詫び申し上げます。", 0),
+    ("遅くなり申し訳ございません。", "遅くなり申し訳ございません。", 0),
+    # 結び・ビジネス記号
+    ("引き続きよろしくお願い申し上げます。", "引き続きよろしくお願い申し上げます。", 0),
+    ("敬具", "\n敬具\n", 0),
+    ("以上、よろしくお願いいたします。", "以上、よろしくお願いいたします。", 0),
+    ("【重要】", "【重要】", 0),
+    ("【共有】", "【共有】", 0),
+    ("【ご報告】", "【ご報告】", 0),
+    ("【相談】", "【相談】", 0),
+    ("日時：", "日時：", 0),
+    ("場所：", "場所：", 0),
+    ("担当：", "担当：", 0),
+    ("※", "※ ", 0),
+    ("◆", "◆ ", 0),
+]
+
+NOVEL_SNIPPETS: List[Tuple[str, str, int]] = [
+    # 会話カギ括弧（カーソル内側自動復帰）
+    ("「」", "「」", 1),
+    ("『』", "『』", 1),
+    ("（）", "（）", 1),
+    ("【】", "【】", 1),
+    ("《》", "《》", 1),
+    # 小説作法・約物記号
+    ("……", "……", 0),
+    ("――", "――", 0),
+    ("！　", "！　", 0),
+    ("？　", "？　", 0),
+    ("！？　", "！？　", 0),
+    ("｜", "｜", 0),
+    ("　(全角空白)", "　", 0),
+    # 台詞・情景スニペット
+    ("「――」", "「――」", 1),
+    ("「……」", "「……」", 1),
+    ("（……）", "（……）", 1),
+    ("――その時、", "――その時、", 0),
+    ("……ふと、", "……ふと、", 0),
+    ("息を呑んだ。", "息を呑んだ。", 0),
+    ("静寂が満ちていた。", "静寂が満ちていた。", 0),
+]
+
 LINUX_COMMAND_SNIPPETS: List[Tuple[str, str, int]] = [
     # System Administration & Service Management
     ("sudo", "sudo ", 0),
@@ -235,6 +322,9 @@ COMMON_SYMBOLS: List[Tuple[str, str, int]] = [
 ]
 
 PRESET_DICT: Dict[str, List[Tuple[str, str, int]]] = {
+    "general": GENERAL_SNIPPETS,
+    "business": BUSINESS_SNIPPETS,
+    "novel": NOVEL_SNIPPETS,
     "linux": LINUX_COMMAND_SNIPPETS,
     "python": PYTHON_SNIPPETS,
     "rust": RUST_SNIPPETS,
@@ -251,7 +341,7 @@ PRESET_DICT: Dict[str, List[Tuple[str, str, int]]] = {
 class CodePredictor:
     """高速プレフィックス検索および言語別スニペット予測エンジン"""
 
-    def __init__(self, mode: str = "linux"):
+    def __init__(self, mode: str = "general"):
         self.mode = mode
         self.custom_snippets: List[Tuple[str, str, int]] = []
 
@@ -261,17 +351,20 @@ class CodePredictor:
 
     def get_available_modes(self) -> List[Tuple[str, str]]:
         return [
-            ("linux", "🐧 Linux / UNIX コマンド"),
-            ("python", "🐍 Python"),
-            ("rust", "🦀 Rust"),
-            ("bash", "🐚 Bash スクリプト"),
-            ("javascript", "🟨 JavaScript / TS"),
-            ("cpp", "⚡ C / C++"),
+            ("general", "通常 (日常・SNS)"),
+            ("business", "ビジネス文書"),
+            ("novel", "小説・創作"),
+            ("linux", "Linuxコマンド"),
+            ("python", "Python"),
+            ("rust", "Rust"),
+            ("bash", "Bash"),
+            ("javascript", "JavaScript"),
+            ("cpp", "C/C++"),
         ]
 
     def predict(self, prefix: str, max_results: int = 8) -> List[Tuple[str, str, int]]:
         """現在のプレフィックスに一致するスニペット・キーワードをスコアリング順に返す"""
-        candidates = PRESET_DICT.get(self.mode, LINUX_COMMAND_SNIPPETS) + self.custom_snippets
+        candidates = PRESET_DICT.get(self.mode, GENERAL_SNIPPETS) + self.custom_snippets
 
         prefix = prefix.strip()
         if not prefix:
@@ -329,7 +422,15 @@ def detect_active_window_mode() -> str:
         if any(p in out for p in term_patterns):
             return "linux"
 
-        # 2. ファイル拡張子検知 (VS Code, Vim, Gedit, etc.)
+        # 2. 小説・創作系・テキストエディタ
+        if any(w in out for w in ["novel", "小説", "シナリオ", "writer", "原稿"]):
+            return "novel"
+
+        # 3. ビジネス文書・オフィス
+        if any(w in out for w in ["mail", "メール", "calc", "excel", "thunderbird", "slack", "chat"]):
+            return "business"
+
+        # 4. プログラミングファイル拡張子検知 (VS Code, Vim, Gedit, etc.)
         if re.search(r'\.(py|pyw)(\s|$|—|-)', out):
             return "python"
         elif re.search(r'\.(rs)(\s|$|—|-)', out):
@@ -344,4 +445,4 @@ def detect_active_window_mode() -> str:
     except Exception:
         pass
 
-    return "linux"
+    return "general"

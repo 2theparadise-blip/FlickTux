@@ -422,8 +422,8 @@ class FlickTuxWindow(Gtk.Window):
         self.hover_cell_widget = None
         self.hover_cancel_timer_id = None
 
-        # Code & Linux Command Predictor
-        self.predictor = CodePredictor(mode="linux")
+        # Code & Linux Command Predictor (Default: General mode)
+        self.predictor = CodePredictor(mode="general")
         self.is_handwriting_mode = False
 
         # Modifiers State
@@ -463,18 +463,18 @@ class FlickTuxWindow(Gtk.Window):
         header.get_style_context().add_class("header-bar")
         header.connect("button-press-event", self.on_header_press)
 
-        # Unified Layout Selector
+        # Unified Layout Selector (Plain text without emojis)
         self.layout_combo = Gtk.ComboBoxText()
         self.layout_combo.get_style_context().add_class("layout-combo")
         self.layout_combo.set_can_focus(False)
 
         self.layout_options = [
-            ("Google", "⌨ Google"),
-            ("iPhone", "⌨ iPhone"),
-            ("Galaxy", "⌨ Galaxy"),
-            ("10キー", "⌨ 10キー"),
-            ("プッシュボタン", "⌨ プッシュ"),
-            ("ガラケー", "⌨ ガラケー"),
+            ("Google", "Google"),
+            ("iPhone", "iPhone"),
+            ("Galaxy", "Galaxy"),
+            ("10キー", "10キー"),
+            ("プッシュボタン", "プッシュ"),
+            ("ガラケー", "ガラケー"),
         ]
 
         custom_dir = os.path.expanduser("~/.config/flktux/custom")
@@ -482,7 +482,7 @@ class FlickTuxWindow(Gtk.Window):
             for fname in sorted(os.listdir(custom_dir)):
                 if fname.endswith(".json"):
                     cid = os.path.splitext(fname)[0]
-                    self.layout_options.append((cid, f"★ {cid}"))
+                    self.layout_options.append((cid, cid))
 
         for lid, label in self.layout_options:
             self.layout_combo.append(lid, label)
@@ -492,7 +492,7 @@ class FlickTuxWindow(Gtk.Window):
         self.layout_combo.connect("changed", self.on_layout_combo_changed)
         header.pack_start(self.layout_combo, False, False, 1)
 
-        # Code / Linux Command Language Selector
+        # Mode / Language Selector (Plain text without emojis)
         self.lang_combo = Gtk.ComboBoxText()
         self.lang_combo.get_style_context().add_class("lang-combo")
         self.lang_combo.set_can_focus(False)
@@ -504,15 +504,15 @@ class FlickTuxWindow(Gtk.Window):
 
         header.pack_start(Gtk.Label(label=""), True, True, 0)  # Spacer
 
-        # Handwriting / Keyboard Toggle Button
-        self.handwriting_btn = Gtk.Button(label="✍ 手書き")
+        # Handwriting / Keyboard Toggle Button (Plain text)
+        self.handwriting_btn = Gtk.Button(label="手書き")
         self.handwriting_btn.get_style_context().add_class("toggle-mode-btn")
         self.handwriting_btn.set_tooltip_text("手書きパッドとキーボードを切り替え")
         self.handwriting_btn.connect("clicked", self.on_toggle_handwriting_mode)
         header.pack_end(self.handwriting_btn, False, False, 1)
 
         # Settings button
-        settings_btn = Gtk.Button(label="⚙")
+        settings_btn = Gtk.Button(label="設定")
         settings_btn.get_style_context().add_class("icon-btn")
         settings_btn.set_tooltip_text("ペンタブ感度・筆圧設定を開く")
         settings_btn.connect("clicked", self.on_open_settings)
@@ -526,7 +526,7 @@ class FlickTuxWindow(Gtk.Window):
 
         main_box.pack_start(header, False, False, 0)
 
-        # ==================== 2. Code / Linux Command Prediction Strip ====================
+        # ==================== 2. Code / Command Prediction Strip ====================
         self.pred_scroll = Gtk.ScrolledWindow()
         self.pred_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         self.pred_scroll.set_min_content_height(26)
@@ -539,7 +539,7 @@ class FlickTuxWindow(Gtk.Window):
         self.display_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.display_bar.get_style_context().add_class("display-bar")
 
-        self.display_icon = Gtk.Label(label="🔤")
+        self.display_icon = Gtk.Label(label="[入力]")
         self.display_bar.pack_start(self.display_icon, False, False, 2)
 
         self.display_label = Gtk.Label()

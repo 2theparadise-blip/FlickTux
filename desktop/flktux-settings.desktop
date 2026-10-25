@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=🎨 ペンタブ感度・筆圧設定 (FlickTux)
-Comment=お絵描き・イラスト向けの筆圧カーブ、手ブレ補正、16:9比率維持、指タッチ感度の調整センター
+Name=ペンタブ感度・筆圧設定 (FlickTux)
+Comment=イラスト制作向けの筆圧カーブ、手ブレ補正、16:9比率維持、指タッチ感度の調整センター
 Exec=flktux-settings
 Icon=flicktux
 Terminal=false

@@ -63,34 +63,42 @@ echo "🔗 Creating symlinks in ${BIN_DIR}..."
 ln -sf "${INSTALL_DIR}/bin/flktux" "${BIN_DIR}/flktux"
 ln -sf "${INSTALL_DIR}/bin/flktux-settings" "${BIN_DIR}/flktux-settings"
 
-# 5. Install desktop launchers
-echo "🖥️ Installing desktop shortcuts..."
+# 5. Install desktop launchers (Application Menu & Dock)
+echo "🖥️ Installing application menu launchers (Applications & Dock)..."
 DSRC="${SCRIPT_DIR}/desktop"
 [ ! -d "${DSRC}" ] && DSRC="${INSTALL_DIR}/desktop"
 cp "${DSRC}/flktux.desktop" "${DESKTOP_APPS}/flktux.desktop"
 cp "${DSRC}/flktux-settings.desktop" "${DESKTOP_APPS}/flktux-settings.desktop"
 chmod a+r "${DESKTOP_APPS}/flktux.desktop" "${DESKTOP_APPS}/flktux-settings.desktop"
 
-# 6. User desktop shortcuts
+# 6. Clean up desktop shortcuts (No icons on Desktop per user requirement)
+echo "🧹 Ensuring no shortcuts on user Desktop..."
 TARGET_USERS=("${SUDO_USER:-}" "$(logname 2>/dev/null || true)" "gesenu")
 for U in "${TARGET_USERS[@]}"; do
     if [ -n "${U}" ] && [ -d "/home/${U}" ]; then
         for D in "/home/${U}/デスクトップ" "/home/${U}/Desktop"; do
             if [ -d "${D}" ]; then
-                cp "${DSRC}/flktux.desktop" "${D}/FlickTux.desktop"
-                cp "${DSRC}/flktux-settings.desktop" "${D}/ペンタブ感度設定.desktop"
-                chown "${U}:${U}" "${D}"/FlickTux.desktop "${D}"/ペンタブ感度設定.desktop
-                chmod +x "${D}"/FlickTux.desktop "${D}"/ペンタブ感度設定.desktop
-                su - "${U}" -c "DISPLAY=:0 gio set '${D}/FlickTux.desktop' metadata::trusted true 2>/dev/null || true"
-                su - "${U}" -c "DISPLAY=:0 gio set '${D}/ペンタブ感度設定.desktop' metadata::trusted true 2>/dev/null || true"
+                rm -f "${D}/FlickTux.desktop" "${D}/ペンタブ感度設定.desktop" "${D}/flktux.desktop" "${D}/flktux-settings.desktop"
             fi
         done
+        # 7. Configure F12 Global Keybinding in Cinnamon
+        USER_UID=$(id -u "${U}" 2>/dev/null || echo 1000)
+        su - "${U}" -c "
+            export DBUS_SESSION_BUS_ADDRESS=\"unix:path=/run/user/${USER_UID}/bus\"
+            dconf write /org/cinnamon/desktop/keybindings/custom-list \"['custom0']\" 2>/dev/null || true
+            dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/name \"'FlickTux Toggle'\" 2>/dev/null || true
+            dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/command \"'/usr/local/bin/flktux toggle'\" 2>/dev/null || true
+            dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding \"['F12']\" 2>/dev/null || true
+        " 2>/dev/null || true
         break
     fi
 done
 
 echo "=================================================================="
 echo "🎉 FlickTux (flktux) successfully installed!"
-echo "   Run from terminal: flktux"
-echo "   Settings GUI     : flktux-settings"
+echo "   Launch via: F12 key (Global Toggle)"
+echo "   Launch via: Plank Dock (Click FlickTux icon)"
+echo "   Launch via: Application Menu (Accessories / System)"
+echo "   Launch via: Terminal ('flktux toggle')"
+echo "   Settings   : 'flktux-settings'"
 echo "=================================================================="

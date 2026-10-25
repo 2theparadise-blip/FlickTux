@@ -32,13 +32,14 @@ class ZinniaRecognizer:
     """Linux 標準の zinnia-recognize / tegaki-zinnia-japanese と連携する認識エンジン"""
 
     MODEL_PATHS = [
+        "/usr/share/tegaki/models/zinnia/handwriting-ja.model",
         "/usr/share/tegaki/models/zinnia/japanese-handwriting.model",
         "/usr/share/zinnia/model/tomoe/handwriting-ja.model",
         "/usr/local/share/tegaki/models/zinnia/japanese-handwriting.model",
     ]
 
     def __init__(self):
-        self.zinnia_bin = shutil.which("zinnia-recognize")
+        self.zinnia_bin = shutil.which("zinnia") or shutil.which("zinnia-recognize")
         self.model_path = None
         for p in self.MODEL_PATHS:
             if os.path.exists(p):
