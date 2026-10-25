@@ -24,12 +24,17 @@ if [ "${CMD}" = "toggle" ] || [ "${CMD}" = "-t" ] || [ "${CMD}" = "--toggle" ]; 
         exit 0
     fi
 
-    # Launch UI
+    # Launch UI asynchronously so caller (e.g. Touchegg gesture daemon) returns immediately
+    mkdir -p "$(dirname "${PID_FILE}")"
     if [ -x "${RUST_BIN}" ] && file "${RUST_BIN}" 2>/dev/null | grep -q "ELF"; then
-        exec "${RUST_BIN}" ui
+        nohup "${RUST_BIN}" ui </dev/null >/dev/null 2>&1 &
+        disown || true
     else
-        exec python3 -c "import sys; sys.path.insert(0, '${PKG_ROOT}'); from flktux.ui import main; main()"
+        nohup python3 -c "import sys; sys.path.insert(0, '${PKG_ROOT}'); from flktux.ui import main; main()" </dev/null >/dev/null 2>&1 &
+        disown || true
     fi
+    echo $! > "${PID_FILE}"
+    exit 0
 else
     # Pass all other subcommands (emit, dry, presets, devices, run, web, --help) directly to Rust core
     if [ -x "${RUST_BIN}" ] && file "${RUST_BIN}" 2>/dev/null | grep -q "ELF"; then
