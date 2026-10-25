@@ -47,7 +47,7 @@
 - **改修内容**:
   - `_clamp_pointer`、`_apply_confine` メソッドを完全削除。
   - セル押下時の `snap_pointer_to_cell_center` から `device.warp` を削除し、ポインタの位置を動かさずに直接イベント座標を保持。
-  - ヘッダーバーの 🔒/🔓 ボタンを削除し、手書きパッド切替ボタン（`[ ✍ 手書き ]`）に転用。
+  - ヘッダーバーの拘束トグルボタンを削除し、手書きパッド切替ボタン（`[ 手書き ]`）に転用。
 
 ### 3.2 仮入力・入力文字列表示バー (Display Bar)
 - **UI配置**: ヘッダー直下にスリムなプレビューバー（背景: `#17181a`、枠線: `#3c4043`）を配置。
@@ -72,7 +72,7 @@
 - **手書きキャンバス (`HandwritingCanvas`)**:
   - Gtk.DrawingArea ＋ cairo による筆圧対応描画。
   - ペンタブの筆圧（`Gdk.AxisUse.PRESSURE`）に応じた線の太さのダイナミック変化。
-  - `↩ 1画戻す`（Undo）、`🧹 クリア` 機能。
+  - `[ 1画戻す ]`（Undo）、`[ クリア ]` 機能。
 - **機能①: 手書きキーボード入力 (Linux `zinnia` 連携)**:
   - ストローク座標を `zinnia-recognize` に渡し、SVM日本語モデル（`tegaki-zinnia-japanese`）で漢字・かな・英数字を認識。
   - 候補バーにボタン提示、タップで `XDO.type(cand)` 入力。
@@ -110,12 +110,13 @@
 sudo apt update
 sudo apt install -y python3 python3-gi python3-gi-cairo python3-xlib \
     gir1.2-gtk-3.0 xdotool xclip zinnia-utils tegaki-zinnia-japanese \
-    xserver-xorg-input-wacom xinput
+    xserver-xorg-input-wacom xinput touchegg
 ```
 
 - `xclip`: 手書き文字透過PNGのクリップボード格納に使用。
 - `zinnia-utils`, `tegaki-zinnia-japanese`: 手書き漢字・かな認識エンジンおよび日本語学習モデル。
 - `xdotool`: 文字送信、キー置換、カッコ内カーソル復帰、アクティブウィンドウ検知に使用。
+- `touchegg`: 2本指スワイプジェスチャーによるトグル開閉に使用。
 
 ---
 
@@ -126,9 +127,9 @@ sudo apt install -y python3 python3-gi python3-gi-cairo python3-xlib \
 
 ### 5.2 快適な起動導線
 1. **`F12` グローバルトグルキー (最速・推奨)**:
-   - エディタやターミナルでの作業中、いつでも `F12` キーを押すだけで最前面にトグル表示／非表示。
-2. **3本指スワイプジェスチャー (指タッチ操作向け)**:
-   - Wacom タッチ盤面やトラックパッドを、指3本でサッと上（または下）にスワイプするだけでトグル開閉（Touchégg連携）。
+   - エディタやターミナルでの作業中、いつでも `F12` キーを押すだけで最前面にトグル表示／非表示。ペンタブ/液タブのエクスプレスキー・サイドスイッチへの割り当てに最適。
+2. **2本指スワイプジェスチャー (指タッチ操作向け)**:
+   - Wacom タッチ盤面やトラックパッドを、指2本でサッと上（または下）にスワイプするだけでトグル起動し、起動時にもう一度2本指スワイプで即座に終了（Touchégg連携）。
 3. **Dock（Plank）からのワンクリック起動**:
    - 画面下の Dock に登録された FlickTux アイコンをクリック（または指でタップ）して即座に起動。
 4. **アプリケーションメニュー（アプリ一覧）からの起動**:

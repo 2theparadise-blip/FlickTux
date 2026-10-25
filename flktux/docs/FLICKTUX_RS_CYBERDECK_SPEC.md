@@ -1,7 +1,7 @@
-# ⚡ FlickTux 実装仕様書・開発プラン（Rust 版）
+# FlickTux 実装仕様書・開発プラン（Rust 版）
 
-> **文書ステータス**: v3.0（v2.1 を改訂: 名称は FlickTux のまま・ペンタブ優先に変更）  
-> **名称**: プロジェクト名 **FlickTux**、バイナリ名 **`flktux`**（派生名・別エディション名は付けない）  
+> **文書ステータス**: v3.1（v3.0 を改訂: 特化型入力予測、2本指スワイプ、不可分トグル制御を反映）  
+> **名称**: プロジェクト名 **FlickTux**、バイナリ名 **`flktux`** / **`flktux-rs`**（派生名・別エディション名は付けない）  
 > **対象システム**: Linux Mint (Cinnamon/X11), Ubuntu を先行。最終的に Raspberry Pi OS (Wayland/X11) のサイバーデッキでも動作させる  
 > **開発言語**: Rust (2021 Edition) + Linux Kernel uinput  
 > **対象リポジトリ**: `scratch/working/tools/FlickTux/`  
@@ -200,7 +200,7 @@ pub struct KeymapPreset {
 
 ---
 
-### 🔹 Phase 1: Rust プロジェクト基盤 ＆ uinput 送出エンジンの確立
+### [Phase 1] Rust プロジェクト基盤 ＆ uinput 送出エンジンの確立
 
 > **目標**: Linuxカーネルの `/dev/uinput` から、仮想キーボードとして任意のキーコード・文字列を0遅延で送出できる最小動作バイナリを完成させる。
 
@@ -223,7 +223,7 @@ pub struct KeymapPreset {
 
 ---
 
-### 🔹 Phase 2: ペンタブ入力 ＆ HTML ver.0.09 キーマップの JSON化 ＆ 高速判定エンジン
+### [Phase 2] ペンタブ入力 ＆ HTML ver.0.09 キーマップの JSON化 ＆ 高速判定エンジン
 
 > **目標**: ペンタブのペン入力（座標・筆圧・接地）を読み取り、HTML (ver. 0.09) の6大プリセットを外部JSON化して、実用的な速度と感度でフリック／連打トグルを判定するステートマシンを完成させる。
 
@@ -258,9 +258,9 @@ pub struct KeymapPreset {
 
 ---
 
-### 🔹 Phase 3: 超軽量フローティングUI の実装
+### [Phase 3] 超軽量フローティングUI の実装 ＆ 不可分トグル制御
 
-> **目標**: Wayland（Raspberry Pi OS）および X11（Linux Mint）の両方で動作する、透過・フローティング・セル結合（iPhone縦長Enter）対応の軽量キーボードGUIを構築する。
+> **目標**: Wayland（Raspberry Pi OS）および X11（Linux Mint）の両方で動作する、透過・フローティング・セル結合（iPhone縦長Enter）対応の軽量キーボードGUIを構築し、F12キーや2本指スワイプによる不可分トグル制御を確立する。
 
 #### 【Phase 3 詳細タスクリスト】
 * [x] **Task 3.1: 軽量GUIフレームワークの初期化**
@@ -276,12 +276,15 @@ pub struct KeymapPreset {
 * [x] **Task 3.4: 画面外周エッジドラッグ移動 ＆ 座標の永続化**
   * ヘッダーバーの `begin_move_drag` によるスライド移動。
   * `configs/config.json` によるサイズ・座標管理。
-* [x] **Task 3.5: Phase 3 実機UI表示テスト**
-  * `flktux`（引数なし）または `flktux ui` でフローティングウィンドウが起動することを確認。
+* [x] **Task 3.5: 不可分トグル制御 ＆ 2本指スワイプ連携**
+  * `/usr/local/bin/flktux toggle` により、`flktux-rs` および UI プロセス（`flktux.ui`）を一括起動・一括終了。
+  * Wacom タッチ盤面での2本指スワイプ（UP/DOWN）により、起動 ⇔ 終了を瞬時にトグル切り替え。
+* [x] **Task 3.6: Phase 3 実機UI表示テスト**
+  * `flktux toggle` でフローティングウィンドウが即座に起動し、再度打鍵で終了することを確認。
 
 ---
 
-### 🔹 Phase 4: 内蔵 Web マトリックスエディタ統合
+### [Phase 4] 内蔵 Web マトリックスエディタ統合
 
 > **目標**: HTML ver.0.09 のマトリックスエディタをバイナリ内に組み込み、PC（および同一LAN内のスマホ）からブラウザ経由でキー配列を直感的にカスタマイズできる環境を完成させる。
 
@@ -303,7 +306,7 @@ pub struct KeymapPreset {
 
 ---
 
-### 🔹 Phase 5: Raspberry Pi（サイバーデッキ）対応 ＆ 自動起動パッケージング（最終フェーズ）
+### [Phase 5] Raspberry Pi（サイバーデッキ）対応 ＆ 自動起動パッケージング（最終フェーズ）
 
 > **目標**: PC + ペンタブで完成した実装を、ARM64（Raspberry Pi OS）向けにビルドし、小型タッチ液晶でも同等に動作すること、systemd自動常駐を検証する。基本機能はPC版と共通。
 

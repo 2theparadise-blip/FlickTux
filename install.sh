@@ -10,22 +10,22 @@ BIN_DIR="/usr/local/bin"
 DESKTOP_APPS="/usr/share/applications"
 
 echo "=================================================================="
-echo "🐧 Installing FlickTux (flktux)..."
+echo "Installing FlickTux (flktux)..."
 echo "=================================================================="
 
 # Check sudo
 if [ "$(id -u)" -ne 0 ]; then
-    echo "⚠️ This installer requires root privileges. Please run with sudo."
+    echo "[!] This installer requires root privileges. Please run with sudo."
     exec sudo bash "$0" "$@"
 fi
 
 # 1. Install dependencies
-echo "📦 Checking and installing system dependencies (including zinnia handwriting, xclip & touchegg)..."
+echo "[*] Checking and installing system dependencies (including zinnia handwriting, xclip & touchegg)..."
 apt-get update -qq
 apt-get install -y -qq python3 python3-gi python3-gi-cairo python3-xlib gir1.2-gtk-3.0 xdotool xclip zinnia-utils tegaki-zinnia-japanese xserver-xorg-input-wacom xinput touchegg >/dev/null || true
 
 # 2. Deploy source to /opt/flicktux
-echo "📂 Copying files to ${INSTALL_DIR}..."
+echo "[*] Copying files to ${INSTALL_DIR}..."
 mkdir -p "${INSTALL_DIR}"
 if [ "${SCRIPT_DIR}" != "${INSTALL_DIR}" ]; then
     cp -r "${SCRIPT_DIR}/flktux" "${INSTALL_DIR}/"
@@ -39,7 +39,7 @@ chmod -R a+rX "${INSTALL_DIR}"
 [ -f "${INSTALL_DIR}/bin/flktux-settings" ] && chmod a+rx "${INSTALL_DIR}/bin/flktux-settings"
 
 # 3. Install Icon to system paths (Standard Linux Mint / XDG icon theme hierarchy)
-echo "🎨 Installing application icons (hicolor 16x16 to 512x512 & pixmaps)..."
+echo "[*] Installing application icons (hicolor 16x16 to 512x512 & pixmaps)..."
 mkdir -p /usr/share/pixmaps
 if [ -d "${INSTALL_DIR}/assets/pixmaps" ]; then
     cp -r "${INSTALL_DIR}/assets/pixmaps/"* /usr/share/pixmaps/
@@ -60,12 +60,12 @@ if command -v gtk-update-icon-cache >/dev/null 2>&1; then
 fi
 
 # 4. Create symlinks in /usr/local/bin
-echo "🔗 Creating symlinks in ${BIN_DIR}..."
+echo "[*] Creating symlinks in ${BIN_DIR}..."
 ln -sf "${INSTALL_DIR}/bin/flktux" "${BIN_DIR}/flktux"
 ln -sf "${INSTALL_DIR}/bin/flktux-settings" "${BIN_DIR}/flktux-settings"
 
 # 5. Install desktop launchers (Application Menu & Dock)
-echo "🖥️ Installing application menu launchers (Applications & Dock)..."
+echo "[*] Installing application menu launchers (Applications & Dock)..."
 DSRC="${SCRIPT_DIR}/desktop"
 [ ! -d "${DSRC}" ] && DSRC="${INSTALL_DIR}/desktop"
 cp "${DSRC}/flktux.desktop" "${DESKTOP_APPS}/flktux.desktop"
@@ -73,7 +73,7 @@ cp "${DSRC}/flktux-settings.desktop" "${DESKTOP_APPS}/flktux-settings.desktop"
 chmod a+r "${DESKTOP_APPS}/flktux.desktop" "${DESKTOP_APPS}/flktux-settings.desktop"
 
 # 6. Clean up desktop shortcuts (No icons on Desktop per user requirement)
-echo "🧹 Ensuring no shortcuts on user Desktop..."
+echo "[*] Ensuring no shortcuts on user Desktop..."
 TARGET_USERS=("${SUDO_USER:-}" "$(logname 2>/dev/null || true)" "gesenu")
 for U in "${TARGET_USERS[@]}"; do
     if [ -n "${U}" ] && [ -d "/home/${U}" ]; then
@@ -92,8 +92,8 @@ for U in "${TARGET_USERS[@]}"; do
             dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding \"['F12']\" 2>/dev/null || true
         " 2>/dev/null || true
 
-        # 8. Configure 3-Finger Swipe Gesture (Touchégg)
-        echo "🖐️ Configuring 3-finger swipe gesture for user ${U}..."
+        # 8. Configure 2-Finger Swipe Gesture (Touchégg)
+        echo "[*] Configuring 2-finger swipe gesture for user ${U}..."
         USER_CONF="/home/${U}/.config/touchegg"
         mkdir -p "${USER_CONF}"
         TSRC="${SCRIPT_DIR}/configs/touchegg.conf"
@@ -114,9 +114,9 @@ if command -v systemctl >/dev/null 2>&1; then
 fi
 
 echo "=================================================================="
-echo "🎉 FlickTux (flktux) successfully installed!"
+echo "FlickTux (flktux) successfully installed!"
 echo "   Launch via: F12 key (Global Toggle)"
-echo "   Launch via: 3-Finger Swipe UP/DOWN (Touch Gesture)"
+echo "   Launch via: 2-Finger Swipe UP/DOWN (Touch Gesture)"
 echo "   Launch via: Plank Dock (Click FlickTux icon)"
 echo "   Launch via: Application Menu (Accessories / System)"
 echo "   Launch via: Terminal ('flktux toggle')"
