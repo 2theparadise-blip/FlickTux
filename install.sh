@@ -92,8 +92,8 @@ for U in "${TARGET_USERS[@]}"; do
             dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding \"['F12']\" 2>/dev/null || true
         " 2>/dev/null || true
 
-        # 8. Configure 2-Finger Swipe Gesture (Touchégg)
-        echo "[*] Configuring 2-finger swipe gesture for user ${U}..."
+        # 8. Configure 3-Finger Swipe Gesture (Touchégg)
+        echo "[*] Configuring 3-finger swipe gesture for user ${U}..."
         USER_CONF="/home/${U}/.config/touchegg"
         mkdir -p "${USER_CONF}"
         TSRC="${SCRIPT_DIR}/configs/touchegg.conf"
@@ -102,7 +102,26 @@ for U in "${TARGET_USERS[@]}"; do
             cp "${TSRC}" "${USER_CONF}/touchegg.conf"
             chown -R "${U}:${U}" "${USER_CONF}"
             chmod 644 "${USER_CONF}/touchegg.conf"
+            # Also deploy to /etc/touchegg/touchegg.conf as system fallback
+            mkdir -p /etc/touchegg
+            cp "${TSRC}" /etc/touchegg/touchegg.conf
+            chmod 644 /etc/touchegg/touchegg.conf
         fi
+
+        # Ensure Touchegg client autostart desktop entry for user session
+        USER_AUTOSTART="/home/${U}/.config/autostart"
+        mkdir -p "${USER_AUTOSTART}"
+        cat << 'EOF' > "${USER_AUTOSTART}/touchegg.desktop"
+[Desktop Entry]
+Type=Application
+Name=Touchégg
+Comment=Touchégg Multi-touch Gesture Daemon Client
+Exec=touchegg
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+        chown -R "${U}:${U}" "${USER_AUTOSTART}"
         break
     fi
 done
@@ -116,7 +135,7 @@ fi
 echo "=================================================================="
 echo "FlickTux (flktux) successfully installed!"
 echo "   Launch via: F12 key (Global Toggle)"
-echo "   Launch via: 2-Finger Swipe UP/DOWN (Touch Gesture)"
+echo "   Launch via: 3-Finger Swipe (Touch Gesture)"
 echo "   Launch via: Plank Dock (Click FlickTux icon)"
 echo "   Launch via: Application Menu (Accessories / System)"
 echo "   Launch via: Terminal ('flktux toggle')"
