@@ -75,43 +75,46 @@ pub mod native_gtk {
     .key-cell {
         background-color: #303134;
         border-radius: 8px;
-        margin: 2px;
-        border: 1px solid #3c4043;
+        border: 2px solid #202124;
         color: #e8eaed;
     }
     .key-cell:hover {
         background-color: #383a3d;
+        border: 2px solid #8ab4f8;
     }
     .key-cell.key-pressed {
         background-color: #8ab4f8;
+        border: 2px solid #8ab4f8;
         color: #202124;
     }
     .action-cell {
         background-color: #3c4043;
         border-radius: 8px;
-        margin: 2px;
-        border: 1px solid #4a4d52;
+        border: 2px solid #202124;
         color: #e8eaed;
     }
     .action-cell:hover {
         background-color: #484b50;
+        border: 2px solid #a8c7fa;
     }
     .action-cell.key-pressed {
         background-color: #5f6368;
+        border: 2px solid #a8c7fa;
     }
     .enter-cell {
         background-color: #8ab4f8;
         border-radius: 8px;
-        margin: 2px;
-        border: 1px solid #aecbfa;
+        border: 2px solid #202124;
         color: #202124;
         font-weight: bold;
     }
     .enter-cell:hover {
         background-color: #aecbfa;
+        border: 2px solid #aecbfa;
     }
     .enter-cell.key-pressed {
         background-color: #d2e3fc;
+        border: 2px solid #d2e3fc;
     }
     "#;
 
@@ -190,13 +193,16 @@ pub mod native_gtk {
             grid.set_row_homogeneous(true);
             grid.set_column_homogeneous(true);
 
-            // Header Bar
+            // Header Bar (Dedicated Move Drag Handle)
+            let header_eb = EventBox::new();
+            header_eb.add_events(gdk::EventMask::BUTTON_PRESS_MASK);
             let header = GtkBox::new(Orientation::Horizontal, 2);
             header.style_context().add_class("header-bar");
+            header_eb.add(&header);
 
             // Drag window to move via Header Bar
             let win_weak = window.downgrade();
-            header.connect_button_press_event(move |_widget, event| {
+            header_eb.connect_button_press_event(move |_widget, event| {
                 if event.button() == 1 {
                     if let Some(win) = win_weak.upgrade() {
                         win.begin_move_drag(
@@ -205,6 +211,7 @@ pub mod native_gtk {
                             event.root().1 as i32,
                             event.time(),
                         );
+                        return Inhibit(true);
                     }
                 }
                 Inhibit(false)
@@ -311,7 +318,7 @@ pub mod native_gtk {
             });
             header.pack_end(&close_btn, false, false, 1);
 
-            main_box.pack_start(&header, false, false, 0);
+            main_box.pack_start(&header_eb, false, false, 0);
 
             // Cross-Flick Preview Guide Overlay (Zero-allocation DrawingArea)
             let guide_area = DrawingArea::new();

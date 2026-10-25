@@ -67,6 +67,7 @@ def ungrab_pointer():
 CONFIG_DIR = os.path.expanduser("~/.config/flktux")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 DEFAULT_TOGGLE_TIMEOUT_MS = 500  # 0.5s auto-commit
+EDGE_MOVE_MARGIN = 12  # Outer edge margin width for window drag (12px per spec 3.3)
 
 CSS_STYLE = b"""
 window {
@@ -206,34 +207,41 @@ window {
 .key-cell {
     background-color: #303134;
     border-radius: 7px;
-    margin: 2px;
-    border: 1px solid #3c4043;
+    border: 2px solid #202124;
 }
 .key-cell:hover, .key-cell.key-hovered {
     background-color: #383a3d;
-    border: 1px solid #8ab4f8;
+    border: 2px solid #8ab4f8;
 }
 .key-cell:active, .key-cell.key-pressed {
     background-color: #8ab4f8;
+    border: 2px solid #8ab4f8;
 }
 .action-cell {
     background-color: #3c4043;
     border-radius: 7px;
-    margin: 2px;
-    border: 1px solid #4a4d52;
+    border: 2px solid #202124;
 }
 .action-cell:hover, .action-cell.key-hovered {
     background-color: #484b50;
-    border: 1px solid #a8c7fa;
+    border: 2px solid #a8c7fa;
+}
+.action-cell:active, .action-cell.key-pressed {
+    background-color: #5f6368;
+    border: 2px solid #a8c7fa;
 }
 .enter-cell {
     background-color: #8ab4f8;
     border-radius: 7px;
-    margin: 2px;
-    border: 1px solid #aecbfa;
+    border: 2px solid #202124;
 }
 .enter-cell:hover {
     background-color: #aecbfa;
+    border: 2px solid #aecbfa;
+}
+.enter-cell:active, .enter-cell.key-pressed {
+    background-color: #d2e3fc;
+    border: 2px solid #d2e3fc;
 }
 
 /* ================= Handwriting Pad UI ================= */
@@ -463,10 +471,14 @@ class FlickTuxWindow(Gtk.Window):
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.edge_frame.add(main_box)
 
-        # ==================== 1. Header Bar ====================
+        # ==================== 1. Header Bar (Dedicated Move Drag Handle) ====================
+        header_eb = Gtk.EventBox()
+        header_eb.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        header_eb.connect("button-press-event", self.on_header_press)
+
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         header.get_style_context().add_class("header-bar")
-        header.connect("button-press-event", self.on_header_press)
+        header_eb.add(header)
 
         # Unified Layout Selector (Plain text without emojis)
         self.layout_combo = Gtk.ComboBoxText()
@@ -529,7 +541,7 @@ class FlickTuxWindow(Gtk.Window):
         close_btn.connect("clicked", self.on_close_clicked)
         header.pack_end(close_btn, False, False, 1)
 
-        main_box.pack_start(header, False, False, 0)
+        main_box.pack_start(header_eb, False, False, 0)
 
         # ==================== 2. Code / Command Prediction Strip ====================
         self.pred_scroll = Gtk.ScrolledWindow()
@@ -727,9 +739,16 @@ class FlickTuxWindow(Gtk.Window):
         self.update_prediction_strip("")
 
     def on_edge_press(self, widget, event):
+        alloc = widget.get_allocation()
+        w, h = alloc.width, alloc.height
+        x, y = event.x, event.y
+        margin = EDGE_MOVE_MARGIN
+        is_on_edge = (x < margin or x > w - margin or y < margin or y > h - margin)
         if event.button == 1:
-            self.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
-            return True
+            # 外周 12px マージン内での押下のみ移動ドラッグを開始 (キー領域等の内部誤爆を完全防止)
+            if is_on_edge:
+                self.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
+                return True
         return False
 
     def on_edge_scroll(self, widget, event):
@@ -818,6 +837,8 @@ class FlickTuxWindow(Gtk.Window):
     def on_header_press(self, widget, event):
         if event.button == 1:
             self.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
+            return True
+        return False
 
     def on_open_settings(self, widget):
         ungrab_pointer()  # Temporarily ungrab pointer for settings dialog
@@ -1018,21 +1039,28 @@ class FlickTuxWindow(Gtk.Window):
 
     def on_cell_touch(self, widget, event, info):
         touch_type = event.touch.type
+        event_time = getattr(event, 'time', 0)
         if touch_type == Gdk.EventType.TOUCH_BEGIN:
-            class FakeEvent:
+            class FakePressEvent:
                 button = 1
                 x_root = event.touch.x_root
                 y_root = event.touch.y_root
-            return self.on_cell_press(widget, FakeEvent(), info)
+                time = event_time
+            self.on_cell_press(widget, FakePressEvent(), info)
+            return True
         elif touch_type == Gdk.EventType.TOUCH_UPDATE:
-            class FakeEvent:
+            class FakeMotionEvent:
                 x_root = event.touch.x_root
                 y_root = event.touch.y_root
-            return self.on_cell_motion(widget, FakeEvent(), info)
+                time = event_time
+            self.on_cell_motion(widget, FakeMotionEvent(), info)
+            return True
         elif touch_type in (Gdk.EventType.TOUCH_END, Gdk.EventType.TOUCH_CANCEL):
-            class FakeEvent:
-                pass
-            return self.on_cell_release(widget, FakeEvent(), info)
+            class FakeReleaseEvent:
+                button = 1
+                time = event_time
+            self.on_cell_release(widget, FakeReleaseEvent(), info)
+            return True
         return False
 
     def on_cell_press(self, widget, event, info):
