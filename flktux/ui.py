@@ -638,7 +638,6 @@ class FlickTuxWindow(Gtk.Window):
         GLib.timeout_add(2500, self._auto_detect_window_mode)
 
     def on_window_destroy(self, widget):
-        self._cancel_hover_timer()
         self._cancel_toggle_timer()
 
     def _auto_detect_window_mode(self):
@@ -1014,7 +1013,6 @@ class FlickTuxWindow(Gtk.Window):
         if event.button not in (1, 3):
             return True
 
-        self._cancel_hover_timer()
         center_coords = self.snap_pointer_to_cell_center(widget, event)
         self.drag_start = center_coords
         self.active_cell = info
