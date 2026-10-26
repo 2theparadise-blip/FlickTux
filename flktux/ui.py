@@ -24,6 +24,7 @@ from gi.repository import Gtk, Gdk, GLib, Pango
 
 try:
     from .xdo import XDO
+    from .engine import FlickDetector, ToggleTracker
     from .layouts import (
         get_layout,
         KANA_FLICKS,
@@ -38,6 +39,7 @@ try:
     from .handwriting import HandwritingPadWidget
 except (ImportError, ValueError):
     from flktux.xdo import XDO
+    from flktux.engine import FlickDetector, ToggleTracker
     from flktux.layouts import (
         get_layout,
         KANA_FLICKS,
@@ -238,7 +240,20 @@ window {
     border: 2px solid #d2e3fc;
 }
 
+/* ================= Flick Cluster (Individual Key Grid) ================= */
+.flick-cluster {
+    background-color: rgba(20, 21, 24, 0.94);
+    border-radius: 9px;
+    padding: 3px;
+    border: 1px solid #5f6368;
+}
+.cluster-cell {
+    min-width: 48px;
+    min-height: 44px;
+}
+
 /* ================= Handwriting Pad UI ================= */
+
 .handwriting-cand-bar {
     background-color: #252629;
     padding: 2px 4px;
@@ -288,85 +303,111 @@ window {
 """
 
 
-class FlickOverlay(Gtk.DrawingArea):
-    """フリック操作時に指・ペン先の上に浮き出る十字型プレビューガイド"""
+class FlickClusterWidget(Gtk.Grid):
+    """押されたキーの位置に上下左右＋中央の5つの独立したキーセルを展開する十字型ウィジェット"""
 
-    def __init__(self):
+    def __init__(self, on_char_selected=None):
         super().__init__()
-        self.set_halign(Gtk.Align.FILL)
-        self.set_valign(Gtk.Align.FILL)
-        self.set_hexpand(True)
-        self.set_vexpand(True)
-        self.connect("draw", self.on_draw)
-        self.active_data = None
-        self.center_x = 0
-        self.center_y = 0
-        self.selected_dir = 'center'
+        self.on_char_selected = on_char_selected
+        self.set_row_spacing(3)
+        self.set_column_spacing(3)
+        self.set_no_show_all(True)
+        self.get_style_context().add_class("flick-cluster")
 
-    def show_guide(self, cx, cy, flick_data, selected_dir='center'):
-        self.center_x = cx
-        self.center_y = cy
-        self.active_data = flick_data
-        self.selected_dir = selected_dir
-        self.show()
-        self.queue_draw()
+        self.cells = {}
+        self.labels = {}
+        self.current_chars = {}
 
-    def hide_guide(self):
-        if self.active_data is not None:
-            self.active_data = None
-            self.queue_draw()
-
-    def on_draw(self, widget, cr):
-        if not self.active_data:
-            return False
-
-        cx, cy = self.center_x, self.center_y
-        dist = 36
-        r = 17
-
-        bubbles = {
-            'center': (cx, cy),
-            'left':   (cx - dist, cy),
-            'up':     (cx, cy - dist),
-            'right':  (cx + dist, cy),
-            'down':   (cx, cy + dist),
+        # 3x3 グリッドのうち十字の 5 箇所にキーセルを配置
+        positions = {
+            (1, 1): 'center',
+            (1, 0): 'up',
+            (0, 1): 'left',
+            (2, 1): 'right',
+            (1, 2): 'down',
         }
 
-        # Subtle cross backdrop
-        cr.set_source_rgba(0.12, 0.13, 0.15, 0.75)
-        cr.arc(cx, cy, dist + r + 2, 0, 2 * math.pi)
-        cr.fill()
+        for (c, r), direction in positions.items():
+            box = Gtk.EventBox()
+            box.set_visible_window(True)
+            box.add_events(
+                Gdk.EventMask.BUTTON_PRESS_MASK
+                | Gdk.EventMask.ENTER_NOTIFY_MASK
+                | Gdk.EventMask.LEAVE_NOTIFY_MASK
+                | Gdk.EventMask.TOUCH_MASK
+            )
+            box.get_style_context().add_class("key-cell")
+            box.get_style_context().add_class("cluster-cell")
 
-        for direction, (bx, by) in bubbles.items():
-            char = self.active_data.get(direction)
-            if not char:
-                continue
+            box.connect("button-press-event", self._on_cell_button_press, direction)
+            box.connect("enter-notify-event", self._on_cell_enter, direction)
+            box.connect("leave-notify-event", self._on_cell_leave, direction)
 
-            is_selected = (direction == self.selected_dir)
-            if is_selected:
-                cr.set_source_rgba(0.54, 0.71, 0.97, 0.95)
+            lbl = Gtk.Label()
+            lbl.set_use_markup(True)
+            box.add(lbl)
+
+            self.attach(box, c, r, 1, 1)
+            self.cells[direction] = box
+            self.labels[direction] = lbl
+
+        self.current_direction = 'center'
+        self.is_open = False
+
+    def _on_cell_button_press(self, widget, event, direction):
+        if event.button == 1:
+            char = self.current_chars.get(direction, '')
+            if char and self.on_char_selected:
+                self.on_char_selected(char, direction)
+                return True
+        return False
+
+    def _on_cell_enter(self, widget, event, direction):
+        widget.get_style_context().add_class("key-hovered")
+        return False
+
+    def _on_cell_leave(self, widget, event, direction):
+        widget.get_style_context().remove_class("key-hovered")
+        return False
+
+    def update_cluster(self, flick_data: dict, cell_width: int, cell_height: int):
+        """各方向の文字を更新し、元のキーと完全に同じサイズに設定"""
+        w = max(48, int(cell_width))
+        h = max(44, int(cell_height))
+        self.current_chars = {}
+        for direction, box in self.cells.items():
+            char = flick_data.get(direction, '') if flick_data else ''
+            lbl = self.labels[direction]
+            if char:
+                self.current_chars[direction] = char
+                lbl.set_markup(f"<span size='15000' weight='bold' color='#ffffff'>{char}</span>")
+                box.set_size_request(w, h)
+                box.show_all()
             else:
-                cr.set_source_rgba(0.24, 0.25, 0.28, 0.88)
-            cr.arc(bx, by, r, 0, 2 * math.pi)
-            cr.fill()
+                lbl.set_text("")
+                box.hide()
 
-            cr.set_source_rgba(0.6, 0.65, 0.7, 0.8)
-            cr.set_line_width(1.5)
-            cr.arc(bx, by, r, 0, 2 * math.pi)
-            cr.stroke()
+        self.set_highlight('center')
 
-            if is_selected:
-                cr.set_source_rgb(0.1, 0.1, 0.12)
+    def set_highlight(self, direction: str):
+        """選択されている方向のキーをハイライト（青点灯）"""
+        self.current_direction = direction
+        for d, box in self.cells.items():
+            ctx = box.get_style_context()
+            if d == direction:
+                ctx.add_class("key-pressed")
             else:
-                cr.set_source_rgb(1.0, 1.0, 1.0)
+                ctx.remove_class("key-pressed")
 
-            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-            cr.set_font_size(18)
-            extents = cr.text_extents(char)
-            cr.move_to(bx - extents.width / 2 - extents.x_bearing, by - extents.height / 2 - extents.y_bearing)
-            cr.show_text(char)
+    def show_cluster(self):
+        self.is_open = True
+        self.show()
 
-        return True
+    def hide_cluster(self):
+        self.is_open = False
+        self.hide()
+
+
 
 
 class FlickTuxWindow(Gtk.Window):
@@ -417,6 +458,10 @@ class FlickTuxWindow(Gtk.Window):
         self.last_char = ""
         self.drag_start = None
         self.active_cell = None
+        self.has_flick_motion = False
+        self.active_flick_key = None
+        self.active_flick_data = None
+
         self.press_button = 1
         self.current_dir = 'center'
         self.tab_buttons = {}
@@ -435,6 +480,9 @@ class FlickTuxWindow(Gtk.Window):
         # Modifiers State
         self.is_shift_latched = False
         self.is_ctrl_latched = False
+
+        # Engine Domain components
+        self.flick_detector = FlickDetector(deadzone=18.0)
 
         # Toggle state
         self.toggle_key = None
@@ -596,10 +644,12 @@ class FlickTuxWindow(Gtk.Window):
         self.grid.set_margin_bottom(4)
         self.overlay.add(self.grid)
 
-        # Overlay Cross Guide
-        self.flick_guide = FlickOverlay()
-        self.overlay.add_overlay(self.flick_guide)
-        self.overlay.set_overlay_pass_through(self.flick_guide, True)
+        # Overlay Flick Cluster Container (Gtk.Fixed)
+        self.cluster_fixed = Gtk.Fixed()
+        self.cluster_widget = FlickClusterWidget(on_char_selected=self.on_cluster_char_selected)
+        self.cluster_fixed.put(self.cluster_widget, 0, 0)
+        self.overlay.add_overlay(self.cluster_fixed)
+        self.overlay.set_overlay_pass_through(self.cluster_fixed, True)
 
         self.body_container.pack_start(self.overlay, True, True, 0)
 
@@ -973,15 +1023,58 @@ class FlickTuxWindow(Gtk.Window):
         box.add(lbl)
         return box
 
-    def _calc_guide_center(self, widget):
+    def _show_cluster_for_widget(self, widget, flick_data, key_name):
         alloc = widget.get_allocation()
-        coords = widget.translate_coordinates(self.flick_guide, alloc.width // 2, alloc.height // 2)
+
+        # widget の overlay に対する相対座標を計算
+        coords = widget.translate_coordinates(self.overlay, 0, 0)
         if coords is not None:
-            return coords[0], coords[1]
-        coords = widget.translate_coordinates(self.overlay, alloc.width // 2, alloc.height // 2)
-        if coords is not None:
-            return coords[0], coords[1]
-        return alloc.x + alloc.width // 2, alloc.y + alloc.height // 2
+            wx, wy = coords
+        else:
+            wx, wy = alloc.x, alloc.y
+
+        cell_w = alloc.width
+        cell_h = alloc.height
+        spacing = 3
+
+        self.active_flick_key = key_name
+        self.active_flick_data = flick_data
+
+        # 十字キーの文字とサイズを設定
+        self.cluster_widget.update_cluster(flick_data, cell_w, cell_h)
+
+        # 十字の中心(1, 1) が押された元のキー(wx, wy) に100%ピッタリ重なるよう配置
+        # 上に1マス(cell_h + spacing)、左に1マス(cell_w + spacing) ずらす
+        cx = wx - (cell_w + spacing)
+        cy = wy - (cell_h + spacing)
+
+        # 元の位置から絶対にズレないようにクランプは行わない！
+        self.cluster_fixed.move(self.cluster_widget, int(cx), int(cy))
+        self.cluster_widget.show_cluster()
+
+    def on_cluster_char_selected(self, char: str, direction: str):
+        """展開された十字キー（あ、い、う、え、お）が直接タップされた時の処理"""
+        self.cluster_widget.hide_cluster()
+        if direction == 'center':
+            # 中央キー（例: 「あ」）が押された場合
+            if self.active_flick_key and self.active_flick_data:
+                self.handle_flick_tap(self.active_flick_key, self.active_flick_data)
+            else:
+                self.commit_toggle()
+                self.type_char(char)
+                self.committed_text += char
+                self.update_display_bar()
+                self.update_prediction_strip(char)
+        else:
+            # フリック先キー（例: 「い」「う」「え」「お」）が押された場合
+            self.commit_toggle()
+            self.type_char(char)
+            self.committed_text += char
+            self.preedit_text = ""
+            self.hover_tentative_char = ""
+            self.last_char = char
+            self.update_display_bar()
+            self.update_prediction_strip(char)
 
     def on_cell_touch(self, widget, event, info):
         touch_type = event.touch.type
@@ -1018,13 +1111,14 @@ class FlickTuxWindow(Gtk.Window):
         self.active_cell = info
         self.press_button = event.button
         self.current_dir = 'center'
+        self.has_flick_motion = False
+        self.flick_detector.start(center_coords[0], center_coords[1])
         widget.get_style_context().add_class("key-pressed")
 
         if info["type"] == "flick":
             key_name = info["key"]
             flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
-            cx, cy = self._calc_guide_center(widget)
-            self.flick_guide.show_guide(cx, cy, flick_data, 'center')
+            self._show_cluster_for_widget(widget, flick_data, key_name)
 
         return True
 
@@ -1032,32 +1126,17 @@ class FlickTuxWindow(Gtk.Window):
         if not self.drag_start or not self.active_cell:
             return True
 
-        dx = event.x_root - self.drag_start[0]
-        dy = event.y_root - self.drag_start[1]
-        dist = math.hypot(dx, dy)
+        direction = self.flick_detector.update(event.x_root, event.y_root)
 
-        threshold = 18  # 18px detent threshold
-        if dist > threshold:
-            angle = math.degrees(math.atan2(dy, dx))
-            if -45 <= angle <= 45:
-                direction = 'right'
-            elif 45 < angle <= 135:
-                direction = 'down'
-            elif -135 <= angle < -45:
-                direction = 'up'
-            else:
-                direction = 'left'
-        else:
-            direction = 'center'
+        if direction != 'center':
+            self.has_flick_motion = True
 
         if direction != self.current_dir:
             self.current_dir = direction
             if info["type"] == "flick":
+                self.cluster_widget.set_highlight(direction)
                 key_name = info["key"]
                 flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
-                cx, cy = self._calc_guide_center(widget)
-                self.flick_guide.show_guide(cx, cy, flick_data, direction)
-
                 target_char = flick_data.get(direction, '') if flick_data else key_name
                 if target_char:
                     self.preedit_text = target_char
@@ -1068,7 +1147,7 @@ class FlickTuxWindow(Gtk.Window):
 
     def on_cell_release(self, widget, event, info):
         widget.get_style_context().remove_class("key-pressed")
-        self.flick_guide.hide_guide()
+        self.flick_detector.reset()
 
         if not self.drag_start:
             return True
@@ -1080,29 +1159,33 @@ class FlickTuxWindow(Gtk.Window):
             key_name = info["key"]
             flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
 
-            if button != 1:
+            if self.has_flick_motion and flick_dir != 'center':
+                # 高速フリック：スライドして離した場合 ➔ 即座に入力確定して閉じる
+                self.cluster_widget.hide_cluster()
                 self.commit_toggle()
+                char = flick_data.get(flick_dir, '') if flick_data else ''
+                if char:
+                    self.type_char(char)
+                    self.committed_text += char
+                    self.preedit_text = ""
+                    self.hover_tentative_char = ""
+                    self.last_char = char
+                    self.update_display_bar()
+                    self.update_prediction_strip(char)
             else:
-                if flick_dir != 'center':
-                    self.commit_toggle()
-                    char = flick_data.get(flick_dir, '') if flick_data else ''
-                    if char:
-                        self.type_char(char)
-                        self.committed_text += char
-                        self.preedit_text = ""
-                        self.hover_tentative_char = ""
-                        self.last_char = char
-                        self.update_display_bar()
-                        self.update_prediction_strip(char)
-                else:
-                    self.handle_flick_tap(key_name, flick_data)
+                # タップ操作：スライドせずにその場で離した場合
+                # 十字キー（あ、い、う、え、お）を開いたまま残す！
+                # ユーザーは展開された「あ」や各キーを独立して直接タップできる
+                pass
         else:
+            self.cluster_widget.hide_cluster()
             self.handle_action(info.get("action"))
 
         self.drag_start = None
         self.active_cell = None
         self.current_dir = 'center'
         return True
+
 
     def on_numpad_event(self, r: int, c: int):
         if r < len(self.current_matrix) and c < len(self.current_matrix[r]):
