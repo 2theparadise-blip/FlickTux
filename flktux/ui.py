@@ -496,6 +496,10 @@ class FlickTuxWindow(Gtk.Window):
             exclusive_grab=self.numpad_exclusive
         )
 
+        # Root Overlay covering entire window so flick cluster renders above everything
+        self.root_overlay = Gtk.Overlay()
+        self.add(self.root_overlay)  # CRITICAL: Always attach root overlay to window!
+
         # Outer Edge Frame for 1-finger / 2-finger drag movement (Free moving, NO confinement)
         self.edge_frame = Gtk.EventBox()
         self.edge_frame.get_style_context().add_class("edge-frame")
@@ -506,11 +510,12 @@ class FlickTuxWindow(Gtk.Window):
         )
         self.edge_frame.connect("button-press-event", self.on_edge_press)
         self.edge_frame.connect("scroll-event", self.on_edge_scroll)
-        self.add(self.edge_frame)
+        self.root_overlay.add(self.edge_frame)
 
         # UI Layout Box inside edge frame
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.edge_frame.add(main_box)
+
 
         # ==================== 1. Header Bar (Dedicated Move Drag Handle) ====================
         header_eb = Gtk.EventBox()
@@ -634,29 +639,27 @@ class FlickTuxWindow(Gtk.Window):
         self.body_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         main_box.pack_start(self.body_container, True, True, 0)
 
-        # 4A. Keyboard Overlay
-        self.overlay = Gtk.Overlay()
+        # 4A. Keyboard Grid
         self.grid = Gtk.Grid()
         self.grid.set_row_homogeneous(True)
         self.grid.set_column_homogeneous(True)
         self.grid.set_margin_start(4)
         self.grid.set_margin_end(4)
         self.grid.set_margin_bottom(4)
-        self.overlay.add(self.grid)
-
-        # Overlay Flick Cluster Container (Gtk.Fixed)
-        self.cluster_fixed = Gtk.Fixed()
-        self.cluster_widget = FlickClusterWidget(on_char_selected=self.on_cluster_char_selected)
-        self.cluster_fixed.put(self.cluster_widget, 0, 0)
-        self.overlay.add_overlay(self.cluster_fixed)
-        self.overlay.set_overlay_pass_through(self.cluster_fixed, True)
-
-        self.body_container.pack_start(self.overlay, True, True, 0)
+        self.body_container.pack_start(self.grid, True, True, 0)
 
         # 4B. Handwriting Pad Composite Widget
         self.handwriting_pad = HandwritingPadWidget(on_text_input=self.on_handwriting_input)
         self.handwriting_pad.set_no_show_all(True)
         self.body_container.pack_start(self.handwriting_pad, True, True, 0)
+
+        # 4C. Topmost Flick Cluster Container (Overlay over entire window, above header/display!)
+        self.cluster_fixed = Gtk.Fixed()
+        self.cluster_widget = FlickClusterWidget(on_char_selected=self.on_cluster_char_selected)
+        self.cluster_fixed.put(self.cluster_widget, 0, 0)
+        self.root_overlay.add_overlay(self.cluster_fixed)
+        self.root_overlay.set_overlay_pass_through(self.cluster_fixed, True)
+
 
         # Apply CSS
         css_provider = Gtk.CssProvider()
@@ -708,15 +711,16 @@ class FlickTuxWindow(Gtk.Window):
     def on_toggle_handwriting_mode(self, btn):
         self.is_handwriting_mode = not self.is_handwriting_mode
         if self.is_handwriting_mode:
-            self.overlay.hide()
+            self.grid.hide()
             self.handwriting_pad.show_all()
             self.handwriting_btn.set_label("⌨ キー")
             self.display_icon.set_text("✍")
         else:
             self.handwriting_pad.hide()
-            self.overlay.show()
+            self.grid.show()
             self.handwriting_btn.set_label("✍ 手書き")
             self.display_icon.set_text("🔤")
+
 
     def on_handwriting_input(self, text: str):
         self.commit_toggle()
@@ -1026,8 +1030,9 @@ class FlickTuxWindow(Gtk.Window):
     def _show_cluster_for_widget(self, widget, flick_data, key_name):
         alloc = widget.get_allocation()
 
-        # widget の overlay に対する相対座標を計算
-        coords = widget.translate_coordinates(self.overlay, 0, 0)
+        # widget の root_overlay（ウィンドウ全体）に対する絶対相対座標を計算
+        coords = widget.translate_coordinates(self.root_overlay, 0, 0)
+
         if coords is not None:
             wx, wy = coords
         else:
