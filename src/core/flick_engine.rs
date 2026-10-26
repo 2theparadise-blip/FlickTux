@@ -508,16 +508,14 @@ mod tests {
     }
 
     #[test]
-    fn tenkey_nav_shift_latch() {
+    fn tenkey_nav_navigation_keys() {
         let cfg = Config { layout: "tenkey".into(), mode: "nav".into(), ..Config::default() };
         let mut e = Engine::new(cfg, load_preset("tenkey", None).unwrap(), load_common().unwrap()).unwrap();
-        // 5 rows x 4 cols on 600x480 → 150 x 96. Row 3 col 0 = Shift, row 2 col 0 = ◀ 左
-        let shift = (75.0, 3.0 * 96.0 + 48.0);
+        // 5 rows x 4 cols on 600x480 → 150 x 96. Row 3 col 0 = S-Tab (Shift+Tab), row 2 col 0 = ◀ 左
+        let shift_tab = (75.0, 3.0 * 96.0 + 48.0);
         let left = (75.0, 2.0 * 96.0 + 48.0);
-        assert!(tap(&mut e, shift, 0).is_empty());
-        assert_eq!(tap(&mut e, left, 1), vec![Output::Key(Stroke { code: KEY_LEFT, shift: true, ctrl: false })]);
-        tap(&mut e, shift, 2);
-        assert_eq!(tap(&mut e, left, 3), vec![Output::Key(Stroke::plain(KEY_LEFT))]);
+        assert_eq!(tap(&mut e, shift_tab, 0), vec![Output::Key(Stroke::shifted(KEY_TAB))]);
+        assert_eq!(tap(&mut e, left, 1), vec![Output::Key(Stroke::plain(KEY_LEFT))]);
     }
 
     #[test]

@@ -178,16 +178,22 @@ class SettingsDialog(Gtk.Window):
         self.add(self.notebook)
         notebook = self.notebook
 
-        # Tab 1: Tablet / Pen Display (Wacom, XP-Pen, Huion, etc.)
+        # Tab 1: Help & User Guide (First tab so users immediately find it)
+        notebook.append_page(self._create_help_tab(), Gtk.Label(label="📖 ヘルプ・操作ガイド"))
+
+        # Tab 2: Keyboard Layout & Custom Key Settings
+        notebook.append_page(self._create_key_settings_tab(), Gtk.Label(label="⌨️ キー配列・カスタム"))
+
+        # Tab 3: Tablet / Pen Display (Wacom, XP-Pen, Huion, etc.)
         notebook.append_page(self._create_tablet_tab(), Gtk.Label(label="🖊️ 液タブ・ペンタブ"))
 
-        # Tab 2: DIY 10-Key / Arduino Keypad
+        # Tab 4: DIY 10-Key / Arduino Keypad
         notebook.append_page(self._create_numpad_tab(), Gtk.Label(label="🔌 外部10キー・自作機"))
 
-        # Tab 3: iPad / iPad mini (Weylus)
+        # Tab 5: iPad / iPad mini (Weylus)
         notebook.append_page(self._create_weylus_tab(), Gtk.Label(label="📱 iPad (Weylus)"))
 
-        # Tab 4: ExpressKeys & Stylus buttons
+        # Tab 6: ExpressKeys & Stylus buttons
         notebook.append_page(self._create_keymap_tab(), Gtk.Label(label="🎮 ペン・ボタン割当"))
 
         self.connect("destroy", self._on_destroy)
@@ -209,7 +215,186 @@ class SettingsDialog(Gtk.Window):
         except Exception:
             pass
 
-    # ==================== Tab 1: 液タブ・ペンタブ ====================
+    # ==================== Tab 1: 操作ヘルプ・使い方マニュアル ====================
+    def _create_help_tab(self):
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_border_width(10)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        scrolled.add(box)
+
+        # Title banner
+        banner = Gtk.Label()
+        banner.set_markup("<span size='14000' weight='bold' color='#8ab4f8'>📖 FlickTux 操作ヘルプ ＆ 使い方ガイド</span>\n"
+                          "<span size='10000' color='#9aa0a6'>ペンタブ・タッチ・テンキーに特化したLinux用仮想キーボード</span>")
+        banner.set_xalign(0.0)
+        box.pack_start(banner, False, False, 0)
+
+        # 1. 基本入力方法
+        f1 = Gtk.Frame(label="1. 基本的な文字入力")
+        b1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        b1.set_border_width(10)
+        lbl1 = Gtk.Label()
+        lbl1.set_markup(
+            "<b>・フリック入力:</b> キーを押したまま上下左右にスライドして離すと、該当方向の文字が直接入力されます。\n"
+            "   （例: 「あ」を左へフリック ➔ 「い」、上へフリック ➔ 「う」）\n"
+            "<b>・ガラケー連打（トグル）入力:</b> 同じキーをタップするごとに「あ ➔ い ➔ う ➔ え ➔ お」と変化します。\n"
+            "<b>・文字確定:</b> 0.5秒待つか、別のキーや「確定」キーを押すと自動確定されます。\n"
+            "<b>・濁点・半濁点・小文字:</b> 「゛゜小」キーを押すと直前の文字が「か ➔ が」「つ ➔ っ」と変化します。"
+        )
+        lbl1.set_xalign(0.0)
+        lbl1.set_line_wrap(True)
+        b1.pack_start(lbl1, False, False, 0)
+        f1.add(b1)
+        box.pack_start(f1, False, False, 0)
+
+        # 2. 10キー配列と表計算（Calc / Excel）テクニック
+        f2 = Gtk.Frame(label="2. 10キー配列（標準19キー）と表計算ソフト（Calc / Excel）活用法")
+        b2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        b2.set_border_width(10)
+        lbl2 = Gtk.Label()
+        lbl2.set_markup(
+            "<b>・モード切替（最上段左端のキー）:</b>\n"
+            "   タップするごとに <b>[かな] ➔ [英字] ➔ [数字] ➔ [移動]</b> が順に切り替わります。\n\n"
+            "<b>・表計算ソフト（Calc / Excel）でのデータ入力:</b>\n"
+            "   「数字」モードでは、テンキーの数値（0〜9, 00, .）に加えて <b>[Tab (右)]</b> と <b>[確定 (下)]</b> を完備。\n"
+            "   数字を入力 ➔ <b>Tab</b> で横のセルへ移動、<b>Enter</b> で下のセルへ移動。\n"
+            "   物理キーボードに触れることなく、テンキーだけで表計算データの連続入力が完結します。\n\n"
+            "<b>・移動・ナビゲーションモード (`nav`):</b>\n"
+            "   十字矢印キー（▲ ▼ ◀ ▶）で表の枠やカーソルを自由に移動できます。\n"
+            "   Tab、Shift+Tab、Home、End、PgUp、PgDn、元に戻す(Ctrl+Z)、やり直す(Ctrl+Y)もワンタッチ操作可能です。"
+        )
+        lbl2.set_xalign(0.0)
+        lbl2.set_line_wrap(True)
+        b2.pack_start(lbl2, False, False, 0)
+        f2.add(b2)
+        box.pack_start(f2, False, False, 0)
+
+        # 3. 表示・非表示とウィンドウ移動
+        f3 = Gtk.Frame(label="3. キーボードの呼び出し・非表示・画面移動")
+        b3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        b3.set_border_width(10)
+        lbl3 = Gtk.Label()
+        lbl3.set_markup(
+            "<b>・3本指スワイプ:</b> タッチパネル上で3本指で上または下へスワイプするとキーボードが出現／隠れます。\n"
+            "<b>・F12 キー / CLI:</b> 端末で <tt>flktux toggle</tt> を実行するか、F12キーに割り当てて瞬時に切替可能。\n"
+            "<b>・ウィンドウの移動:</b> 最上部のヘッダーバー、またはキーボード外周の黒い縁枠（12px）をドラッグして好きな位置へ移動できます。"
+        )
+        lbl3.set_xalign(0.0)
+        lbl3.set_line_wrap(True)
+        b3.pack_start(lbl3, False, False, 0)
+        f3.add(b3)
+        box.pack_start(f3, False, False, 0)
+
+        # 4. トラブルシューティング
+        f4 = Gtk.Frame(label="4. よくある質問・トラブルシューティング")
+        b4 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        b4.set_border_width(10)
+        lbl4 = Gtk.Label()
+        lbl4.set_markup(
+            "<b>Q. キーを押しても文字が入らない・届かない</b>\n"
+            "A. 入力したい対象のアプリ（エディタ、Calc、ブラウザなど）を一度クリックしてカーソルを点滅させてから、FlickTux のキーを押してください。\n\n"
+            "<b>Q. 物理テンキーの入力が他のアプリに漏れてしまう</b>\n"
+            "A. 本設定画面の「外部10キー」タブでデバイスを選択し、[排他制御 (EVIOCGRAB)] を有効にしてください。"
+        )
+        lbl4.set_xalign(0.0)
+        lbl4.set_line_wrap(True)
+        b4.pack_start(lbl4, False, False, 0)
+        f4.add(b4)
+        box.pack_start(f4, False, False, 0)
+
+        return scrolled
+
+    # ==================== Tab 2: キー配列・カスタム設定 ====================
+    def _create_key_settings_tab(self):
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_border_width(10)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        scrolled.add(box)
+
+        # Layout selector
+        f_layout = Gtk.Frame(label="標準キー配列プリセット")
+        b_layout = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        b_layout.set_border_width(10)
+
+        row1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        row1.pack_start(Gtk.Label(label="起動時の配列:"), False, False, 0)
+        self.preset_combo = Gtk.ComboBoxText()
+        for p in ["Google", "Galaxy", "iPhone", "ガラケー", "10キー"]:
+            self.preset_combo.append(p, p)
+        self.preset_combo.set_active_id(self.app_cfg.get("default_layout", "Google"))
+        row1.pack_start(self.preset_combo, True, True, 0)
+        b_layout.pack_start(row1, False, False, 0)
+
+        f_layout.add(b_layout)
+        box.pack_start(f_layout, False, False, 0)
+
+        # Toggle Commit Timeout
+        f_toggle = Gtk.Frame(label="連打トグル自動確定時間 (ms)")
+        b_toggle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        b_toggle.set_border_width(10)
+
+        self.toggle_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 200, 1200, 50)
+        self.toggle_scale.set_value(self.app_cfg.get("toggle_timeout_ms", 500))
+        self.toggle_scale.set_digits(0)
+        self.toggle_scale.set_value_pos(Gtk.PositionType.RIGHT)
+        b_toggle.pack_start(self.toggle_scale, False, False, 0)
+        desc = Gtk.Label()
+        desc.set_markup("<span size='9000' color='#9aa0a6'>同じキーを連続で押したときに、次の文字へ移るまでの待ち時間です（標準: 500ms）</span>")
+        desc.set_xalign(0.0)
+        b_toggle.pack_start(desc, False, False, 0)
+
+        f_toggle.add(b_toggle)
+        box.pack_start(f_toggle, False, False, 0)
+
+        # Custom Keymap Folder
+        f_custom = Gtk.Frame(label="カスタム配列フォルダ (~/.config/flktux/custom)")
+        b_custom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        b_custom.set_border_width(10)
+
+        c_desc = Gtk.Label()
+        c_desc.set_markup(
+            "FlickTux では、各配列の JSON 設定ファイルをカスタマイズできます。\n"
+            "独自に配置を変更した配列を保存すると、最優先で自動適用されます。"
+        )
+        c_desc.set_xalign(0.0)
+        b_custom.pack_start(c_desc, False, False, 0)
+
+        btn_open_folder = Gtk.Button(label="📁 カスタム配列フォルダを開く")
+        def _open_folder(w):
+            cpath = os.path.expanduser("~/.config/flktux/custom")
+            os.makedirs(cpath, exist_ok=True)
+            subprocess.Popen(["xdg-open", cpath])
+        btn_open_folder.connect("clicked", _open_folder)
+        b_custom.pack_start(btn_open_folder, False, False, 0)
+
+        f_custom.add(b_custom)
+        box.pack_start(f_custom, False, False, 0)
+
+        # Save Button
+        btn_save = Gtk.Button(label="💾 キー配列設定を保存")
+        def _save_key_cfg(w):
+            self.app_cfg["default_layout"] = self.preset_combo.get_active_id() or "Google"
+            self.app_cfg["toggle_timeout_ms"] = int(self.toggle_scale.get_value())
+            self._save_app_config()
+            dlg = Gtk.MessageDialog(
+                transient_for=self,
+                flags=0,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.OK,
+                text="✅ 設定を保存しました。次回起動時より適用されます。"
+            )
+            dlg.run()
+            dlg.destroy()
+        btn_save.connect("clicked", _save_key_cfg)
+        box.pack_start(btn_save, False, False, 10)
+
+        return scrolled
+
+    # ==================== Tab 3: 液タブ・ペンタブ ====================
     def _create_tablet_tab(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         box.set_border_width(8)

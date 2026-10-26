@@ -83,8 +83,8 @@ NUMBER_FLICKS = {
 # =============================================================================
 
 def get_layout(layout_name: str, mode: str = "kana"):
-    """指定のレイアウト名と入力モード (kana / katakana / alpha / number) に応じた
-    5x4 / 4x5 のマトリックスを生成して返す"""
+    """指定のレイアウト名と入力モード (kana / katakana / alpha / number / nav) に応じた
+    マトリックスを生成して返す"""
 
     mode_label = {
         "kana": "あ",
@@ -95,79 +95,103 @@ def get_layout(layout_name: str, mode: str = "kana"):
     }.get(mode, "あ")
 
     # -------------------------------------------------------------------------
-    # 5. 10-Key Numpad Layout (5 rows x 4 columns)
-    # 7, 8, 9 / 4, 5, 6 / 1, 2, 3 / 0
-    # -------------------------------------------------------------------------
     if layout_name == "10キー":
+        mode_btn_label = {
+            "kana": "かな",
+            "katakana": "カナ",
+            "alpha": "英字",
+            "number": "数字",
+            "nav": "移動"
+        }.get(mode, "切替")
+
         if mode == "nav":
             return [
-                [{"type": "action", "label": "Esc", "num": "/", "action": "esc", "style": "action-cell"},
-                 {"type": "action", "label": "Home", "num": "←", "action": "home", "style": "action-cell"},
-                 {"type": "action", "label": "End", "num": "→", "action": "end", "style": "action-cell"},
-                 {"type": "action", "label": "⌫", "num": "BS", "action": "backspace", "style": "action-cell"}],
-                [{"type": "action", "label": "Tab", "num": "7", "action": "tab", "style": "action-cell"},
+                [{"type": "action", "label": mode_btn_label, "num": "Num", "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "Esc", "num": "Esc", "action": "esc", "style": "action-cell"},
+                 {"type": "action", "label": "Home", "num": "Home", "action": "home", "style": "action-cell"},
+                 {"type": "action", "label": "End", "num": "End", "action": "end", "style": "action-cell"}],
+                [{"type": "action", "label": "PgUp", "num": "PgUp", "action": "page_up", "style": "action-cell"},
                  {"type": "action", "label": "▲ 上", "num": "8", "action": "up", "style": "action-cell"},
-                 {"type": "action", "label": "S-Tab", "num": "9", "action": "shift_tab", "style": "action-cell"},
-                 {"type": "action", "label": "PgUp", "num": "-", "action": "page_up", "style": "action-cell"}],
+                 {"type": "action", "label": "PgDn", "num": "PgDn", "action": "page_down", "style": "action-cell"},
+                 {"type": "action", "label": "⌫", "num": "BS", "action": "backspace", "style": "action-cell"}],
                 [{"type": "action", "label": "◀ 左", "num": "4", "action": "left", "style": "action-cell"},
-                 {"type": "action", "label": "決定", "num": "5", "action": "enter", "style": "action-cell"},
+                 {"type": "action", "label": "Tab", "num": "Tab", "action": "tab", "style": "action-cell"},
                  {"type": "action", "label": "▶ 右", "num": "6", "action": "right", "style": "action-cell"},
-                 {"type": "action", "label": "PgDn", "num": "変", "action": "page_down", "style": "action-cell"}],
-                [{"type": "action", "label": "Shift", "num": "1", "action": "shift", "style": "action-cell"},
+                 {"type": "action", "label": "Del", "num": "Del", "action": "delete", "style": "action-cell"}],
+                [{"type": "action", "label": "S-Tab", "num": "S-Tab", "action": "shift_tab", "style": "action-cell"},
                  {"type": "action", "label": "▼ 下", "num": "2", "action": "down", "style": "action-cell"},
-                 {"type": "action", "label": "Ctrl", "num": "3", "action": "ctrl", "style": "action-cell"},
-                 {"type": "action", "label": "次へ", "num": "+", "action": "next", "style": "action-cell"}],
-                [{"type": "action", "label": "Space", "num": "0", "action": "space", "style": "action-cell"},
-                 {"type": "action", "label": "Del", "num": ".", "action": "delete", "style": "action-cell"},
-                 {"type": "action", "label": mode_label, "num": "切替", "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "決定", "num": "5", "action": "enter", "style": "enter-cell"},
                  {"type": "action", "label": "確定", "num": "Ent", "action": "enter", "style": "enter-cell"}],
+                [{"type": "action", "label": "戻す", "num": "C-z", "action": "undo", "style": "action-cell"},
+                 {"type": "action", "label": "進む", "num": "C-y", "action": "redo", "style": "action-cell"},
+                 {"type": "action", "label": "空白", "num": "0", "action": "space", "style": "action-cell"},
+                 {"type": "action", "label": "確定", "num": "Ent", "action": "enter", "style": "enter-cell"}],
+            ]
+
+        if mode == "number":
+            # 主要メーカー標準19キー表計算仕様: 0〜9, 00, ., /, *, -, +, BS, Enter, そして表枠移動の Tab
+            return [
+                [{"type": "action", "label": mode_btn_label, "num": "Num", "action": "mode", "style": "action-cell"},
+                 {"type": "action", "label": "/", "num": "/", "action": "slash", "style": "action-cell"},
+                 {"type": "action", "label": "*", "num": "*", "action": "asterisk", "style": "action-cell"},
+                 {"type": "action", "label": "⌫", "num": "BS", "action": "backspace", "style": "action-cell"}],
+                [{"type": "flick", "key": "7", "num": "7", "flick_data": NUMBER_FLICKS.get("7")},
+                 {"type": "flick", "key": "8", "num": "8", "flick_data": NUMBER_FLICKS.get("8")},
+                 {"type": "flick", "key": "9", "num": "9", "flick_data": NUMBER_FLICKS.get("9")},
+                 {"type": "action", "label": "-", "num": "-", "action": "minus", "style": "action-cell"}],
+                [{"type": "flick", "key": "4", "num": "4", "flick_data": NUMBER_FLICKS.get("4")},
+                 {"type": "flick", "key": "5", "num": "5", "flick_data": NUMBER_FLICKS.get("5")},
+                 {"type": "flick", "key": "6", "num": "6", "flick_data": NUMBER_FLICKS.get("6")},
+                 {"type": "action", "label": "+", "num": "+", "action": "plus", "style": "action-cell"}],
+                [{"type": "flick", "key": "1", "num": "1", "flick_data": NUMBER_FLICKS.get("1")},
+                 {"type": "flick", "key": "2", "num": "2", "flick_data": NUMBER_FLICKS.get("2")},
+                 {"type": "flick", "key": "3", "num": "3", "flick_data": NUMBER_FLICKS.get("3")},
+                 {"type": "action", "label": "確定", "num": "Ent", "action": "enter", "style": "enter-cell"}],
+                [{"type": "flick", "key": "0", "num": "0", "flick_data": NUMBER_FLICKS.get("0")},
+                 {"type": "action", "label": "00", "num": "00", "action": "double_zero", "style": "action-cell"},
+                 {"type": "flick", "key": ".", "num": ".", "flick_data": {'center': '.', 'left': ',', 'up': ':', 'right': ';', 'down': '.'}},
+                 {"type": "action", "label": "Tab (右)", "num": "Tab", "action": "tab", "style": "action-cell"}],
             ]
 
         if mode == "katakana":
             k7, k8, k9 = "ア", "カ", "サ"
             k4, k5, k6 = "タ", "ナ", "ハ"
             k1, k2, k3 = "マ", "ヤ", "ラ"
-            k0, kdot, kdak = "ワ", "、。", "゛゜小"
+            k0, kdot = "ワ", "、。"
             fd_map = KATAKANA_FLICKS
         elif mode == "alpha":
             k7, k8, k9 = "abc", "def", "ghi"
             k4, k5, k6 = "jkl", "mno", "pqrs"
             k1, k2, k3 = "tuv", "wxyz", "@._/"
-            k0, kdot, kdak = "␣", ".,?!", "a/A"
+            k0, kdot = "␣", ".,?!"
             fd_map = ALPHA_FLICKS
-        elif mode == "number":
-            k7, k8, k9 = "7", "8", "9"
-            k4, k5, k6 = "4", "5", "6"
-            k1, k2, k3 = "1", "2", "3"
-            k0, kdot, kdak = "0", ".", "+/-"
-            fd_map = NUMBER_FLICKS
         else: # kana
             k7, k8, k9 = "あ", "か", "さ"
             k4, k5, k6 = "た", "な", "は"
             k1, k2, k3 = "ま", "や", "ら"
-            k0, kdot, kdak = "わ", "、。", "゛゜小"
+            k0, kdot = "わ", "、。"
             fd_map = KANA_FLICKS
 
         return [
-            [{"type": "action", "label": "記号", "num": "/", "action": "symbol", "style": "action-cell"},
-             {"type": "action", "label": "◀", "num": "←", "action": "left", "style": "action-cell"},
-             {"type": "action", "label": "▶", "num": "→", "action": "right", "style": "action-cell"},
+            [{"type": "action", "label": mode_btn_label, "num": "Num", "action": "mode", "style": "action-cell"},
+             {"type": "action", "label": "/", "num": "/", "action": "slash", "style": "action-cell"},
+             {"type": "action", "label": "*", "num": "*", "action": "asterisk", "style": "action-cell"},
              {"type": "action", "label": "⌫", "num": "BS", "action": "backspace", "style": "action-cell"}],
             [{"type": "flick", "key": k7, "num": "7", "flick_data": fd_map.get(k7)},
              {"type": "flick", "key": k8, "num": "8", "flick_data": fd_map.get(k8)},
              {"type": "flick", "key": k9, "num": "9", "flick_data": fd_map.get(k9)},
-             {"type": "action", "label": "空白", "num": "-", "action": "space", "style": "action-cell"}],
+             {"type": "action", "label": "-", "num": "-", "action": "minus", "style": "action-cell"}],
             [{"type": "flick", "key": k4, "num": "4", "flick_data": fd_map.get(k4)},
              {"type": "flick", "key": k5, "num": "5", "flick_data": fd_map.get(k5)},
              {"type": "flick", "key": k6, "num": "6", "flick_data": fd_map.get(k6)},
-             {"type": "action", "label": "変換", "num": "変", "action": "convert", "style": "action-cell"}],
+             {"type": "action", "label": "+", "num": "+", "action": "plus", "style": "action-cell"}],
             [{"type": "flick", "key": k1, "num": "1", "flick_data": fd_map.get(k1)},
              {"type": "flick", "key": k2, "num": "2", "flick_data": fd_map.get(k2)},
              {"type": "flick", "key": k3, "num": "3", "flick_data": fd_map.get(k3)},
-             {"type": "action", "label": "次へ", "num": "+", "action": "next", "style": "action-cell"}],
+             {"type": "action", "label": "確定", "num": "Ent", "action": "enter", "style": "enter-cell"}],
             [{"type": "flick", "key": k0, "num": "0", "flick_data": fd_map.get(k0)},
-             {"type": "action", "label": mode_label, "num": "切替", "action": "mode", "style": "action-cell"},
-             {"type": "flick", "key": ".", "num": ".", "flick_data": fd_map.get(kdot)},
+             {"type": "action", "label": "゛゜小" if mode == "kana" else "a/A", "num": "変", "action": "dakuten" if mode in ("kana", "katakana") else "shift", "style": "action-cell"},
+             {"type": "flick", "key": kdot, "num": ".", "flick_data": fd_map.get(kdot)},
              {"type": "action", "label": "確定", "num": "Ent", "action": "enter", "style": "enter-cell"}],
         ]
 

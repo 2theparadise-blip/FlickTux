@@ -57,12 +57,6 @@ try:
 except Exception:
     HAS_XLIB = False
 
-# Pointer confinement completely deprecated & removed
-def confine_pointer_to_xid(xid: int) -> bool:
-    return True
-
-def ungrab_pointer():
-    pass
 
 CONFIG_DIR = os.path.expanduser("~/.config/flktux")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
@@ -433,7 +427,6 @@ class FlickTuxWindow(Gtk.Window):
         self.preedit_text = ""
         self.hover_tentative_char = ""
         self.hover_cell_widget = None
-        self.hover_cancel_timer_id = None
 
         # Code & Linux Command Predictor (Default: General mode)
         self.predictor = CodePredictor(mode="general")
@@ -625,7 +618,6 @@ class FlickTuxWindow(Gtk.Window):
         )
 
         self.rebuild_keys()
-        self.update_tab_styles()
         self.update_display_bar()
         self.update_prediction_strip("")
 
@@ -841,10 +833,8 @@ class FlickTuxWindow(Gtk.Window):
         return False
 
     def on_open_settings(self, widget):
-        ungrab_pointer()  # Temporarily ungrab pointer for settings dialog
         from .settings_gui import SettingsDialog
         win = SettingsDialog()
-        win.connect("destroy", lambda w: self._apply_confine() if self.is_confined else None)
         win.show_all()
 
     def on_close_clicked(self, widget):
@@ -875,9 +865,6 @@ class FlickTuxWindow(Gtk.Window):
                 self.numpad_listener.start()
             else:
                 self.numpad_listener.stop()
-
-    def update_tab_styles(self):
-        pass
 
     def rebuild_keys(self):
         for child in self.grid.get_children():
@@ -925,55 +912,15 @@ class FlickTuxWindow(Gtk.Window):
             pass
         return (int(event.x_root), int(event.y_root))
 
-    def _cancel_hover_timer(self):
-        if getattr(self, 'hover_cancel_timer_id', None) is not None:
-            try:
-                GLib.source_remove(self.hover_cancel_timer_id)
-            except Exception:
-                pass
-            self.hover_cancel_timer_id = None
-
-    def _on_hover_cancel_timeout(self):
-        """キーボード領域外へ離脱した時のホバー予備仮入力自動キャンセル"""
-        self.hover_cancel_timer_id = None
-        if self.hover_tentative_char and not self.drag_start:
-            XDO.key("BackSpace")
-            self.hover_tentative_char = ""
-            self.preedit_text = ""
-            self.update_display_bar()
-        return False
-
     def on_cell_enter(self, widget, event, info):
-        """キーにポインタが乗った瞬間に予備的仮入力を開始"""
-        self._cancel_hover_timer()
+        """キーにポインタが乗った時のホバー演出 (文字送信はクリック/リリース時のみ安全に実行)"""
         widget.get_style_context().add_class("key-hovered")
         self.hover_cell_widget = widget
-
-        if self.drag_start:
-            return False
-
-        if info["type"] == "flick":
-            key_name = info["key"]
-            flick_data = info.get("flick_data", KANA_FLICKS.get(key_name, {'center': key_name}))
-            center_char = flick_data.get('center', key_name) if flick_data else key_name
-            if center_char:
-                if self.hover_tentative_char and self.hover_tentative_char != center_char:
-                    XDO.replace(center_char)
-                elif not self.hover_tentative_char:
-                    XDO.type(center_char)
-                self.hover_tentative_char = center_char
-                self.preedit_text = center_char
-                self.update_display_bar()
-                self.update_prediction_strip(center_char)
         return False
 
     def on_cell_leave(self, widget, event, info):
         """キーから離脱した時の処理"""
         widget.get_style_context().remove_class("key-hovered")
-        if not self.drag_start and self.hover_tentative_char:
-            self._cancel_hover_timer()
-            # 70ms 内に別キーに乗らなければキャンセル消去
-            self.hover_cancel_timer_id = GLib.timeout_add(70, self._on_hover_cancel_timeout)
         return False
 
     def create_cell_widget(self, info):
@@ -1113,11 +1060,8 @@ class FlickTuxWindow(Gtk.Window):
                 cx, cy = self._calc_guide_center(widget)
                 self.flick_guide.show_guide(cx, cy, flick_data, direction)
 
-                # リアルタイム仮入力文字置換 (初期点復帰デッドゾーン対応)
                 target_char = flick_data.get(direction, '') if flick_data else key_name
-                if target_char and target_char != self.hover_tentative_char:
-                    XDO.replace(target_char)
-                    self.hover_tentative_char = target_char
+                if target_char:
                     self.preedit_text = target_char
                     self.update_display_bar()
                     self.update_prediction_strip(target_char)
@@ -1145,7 +1089,7 @@ class FlickTuxWindow(Gtk.Window):
                     self.commit_toggle()
                     char = flick_data.get(flick_dir, '') if flick_data else ''
                     if char:
-                        # 既に on_cell_motion で置換送信済みなので確定登録
+                        self.type_char(char)
                         self.committed_text += char
                         self.preedit_text = ""
                         self.hover_tentative_char = ""
@@ -1221,10 +1165,7 @@ class FlickTuxWindow(Gtk.Window):
                 self.toggle_key = key_name
                 self.toggle_index = 0
                 char = cycle[0]
-                if not self.hover_tentative_char:
-                    self.type_char(char)
-                else:
-                    self.last_char = char
+                self.type_char(char)
                 self.preedit_text = char
                 self.hover_tentative_char = char
                 self.update_display_bar()
@@ -1234,10 +1175,7 @@ class FlickTuxWindow(Gtk.Window):
 
         self.commit_toggle()
         char = flick_data.get('center', key_name) if flick_data else key_name
-        if not self.hover_tentative_char:
-            self.type_char(char)
-        else:
-            self.last_char = char
+        self.type_char(char)
         self.committed_text += char
         self.preedit_text = ""
         self.hover_tentative_char = ""
@@ -1256,6 +1194,20 @@ class FlickTuxWindow(Gtk.Window):
                 self.committed_text = self.committed_text[:-1]
             self.update_display_bar()
             self.update_prediction_strip("")
+        elif action == "undo":
+            XDO.key("ctrl+z")
+        elif action == "redo":
+            XDO.key("ctrl+y")
+        elif action == "slash":
+            self.type_char("/")
+        elif action == "asterisk":
+            self.type_char("*")
+        elif action == "minus":
+            self.type_char("-")
+        elif action == "plus":
+            self.type_char("+")
+        elif action == "double_zero":
+            self.type_char("00")
         elif action == "next":
             self.commit_toggle()
             XDO.key("Right")

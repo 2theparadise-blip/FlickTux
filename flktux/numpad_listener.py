@@ -169,21 +169,26 @@ class NumpadListener:
         """X11 Grab fallback for generic desktop keyboards"""
         try:
             self.d = self.display.Display()
+            # Suppress noisy BadAccess X protocol errors
+            self.d.set_error_handler(lambda err, req=None: None)
             self.root = self.d.screen().root
 
             for key_name in NUMPAD_GRID_MAP.keys():
-                ks = self.XK.string_to_keysym(key_name)
-                if ks:
-                    kc = self.d.keysym_to_keycode(ks)
-                    if kc:
-                        self.grabbed_keycodes[key_name] = kc
-                        self.root.grab_key(
-                            kc,
-                            self.X.AnyModifier,
-                            True,
-                            self.X.GrabModeAsync,
-                            self.X.GrabModeAsync
-                        )
+                try:
+                    ks = self.XK.string_to_keysym(key_name)
+                    if ks:
+                        kc = self.d.keysym_to_keycode(ks)
+                        if kc:
+                            self.root.grab_key(
+                                kc,
+                                self.X.AnyModifier,
+                                True,
+                                self.X.GrabModeAsync,
+                                self.X.GrabModeAsync
+                            )
+                            self.grabbed_keycodes[key_name] = kc
+                except Exception:
+                    pass
             self.d.sync()
 
             while self.running:
