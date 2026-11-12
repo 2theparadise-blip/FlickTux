@@ -1,6 +1,6 @@
 [Unit]
 Description=FlickTux Floating Virtual Keyboard Service
-Documentation=https://github.com/kogetu/FlickTux
+Documentation=https://github.com/2theparadise-blip/FlickTux
 After=graphical-session.target
 PartOf=graphical-session.target
 
